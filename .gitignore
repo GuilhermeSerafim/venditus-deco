@@ -1,0 +1,34 @@
+# Arquivos locais / pessoais
+tmp/
+
+# Segredos
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# LangGraph
+.langgraph_api/
+*.sqlite
+*.sqlite3
+checkpoints.db
+
+# Node / front
+node_modules/
+dist/
+build/
+.vite/
+
+# Editores e SO
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
