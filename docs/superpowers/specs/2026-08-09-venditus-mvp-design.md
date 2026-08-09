@@ -1,4 +1,4 @@
-# OPHION — Design do MVP
+# Venditus — Design do MVP
 
 **Data:** 2026-08-09
 **Contexto:** Hackathon deco "Agents for Commerce"
@@ -85,7 +85,7 @@ Ninguém fecha o loop nem cruza pré com pós-venda.
 ### Fora — explicitamente
 
 - **Caminho de escrita pós-venda → PDP.** O motor tem dois leitores desenhados; **um construído**. O guarda prova que o segundo sinal está ligado; a correção de PDP a partir de devolução é o passo seguinte, não este.
-- **Camada de lote / anomalia temporal e regional** (casos B e C do documento OPHION). É a parte mais original e a menos demonstrável — exige rastreio de lote por pedido, que o Shopify não fornece. Fica como narrativa de pitch, não como código.
+- **Camada de lote / anomalia temporal e regional** (casos B e C do documento Venditus). É a parte mais original e a menos demonstrável — exige rastreio de lote por pedido, que o Shopify não fornece. Fica como narrativa de pitch, não como código.
 - Adapter VTEX (interface preparada, implementação não).
 - Cron/agendamento, autenticação, deploy, multi-loja.
 

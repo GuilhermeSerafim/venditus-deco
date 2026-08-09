@@ -1,14 +1,14 @@
-# OPHION Backend — Implementation Plan
+# Venditus Backend — Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Construir o backend do OPHION — um grafo LangGraph que lê buscas sem resultado, diagnostica a causa no catálogo, recusa a correção quando o pós-venda a contradiz, e escreve no catálogo só após aprovação humana.
+**Goal:** Construir o backend do Venditus — um grafo LangGraph que lê buscas sem resultado, diagnostica a causa no catálogo, recusa a correção quando o pós-venda a contradiz, e escreve no catálogo só após aprovação humana.
 
 **Architecture:** Seis nós num `StateGraph`, dos quais dois usam LLM (`investigador`, `guarda`). Uma aresta condicional após o guarda desvia para `quarentena` quando há contradição; o caminho feliz passa por um `interrupt()` de aprovação humana antes de qualquer escrita. A lógica de domínio não conhece HTTP nem Shopify — o catálogo fica atrás de um `CatalogAdapter`, com implementação fake (em memória) para testes e demo, e implementação Shopify plugável.
 
 **Tech Stack:** Python · LangGraph (+ checkpointer SQLite) · `langchain-openai >= 1.4.1` com `gpt-5.6-terra` · Pydantic para saída tipada · `httpx` para Shopify Admin GraphQL · pytest.
 
-**Spec:** `docs/superpowers/specs/2026-08-09-ophion-mvp-design.md`
+**Spec:** `docs/superpowers/specs/2026-08-09-venditus-mvp-design.md`
 
 **Regras inegociáveis (violá-las quebra o produto):**
 1. **Nunca passar `temperature` ou `top_p`** para o modelo. Use `reasoning_effort`.
@@ -24,16 +24,16 @@
 |---|---|
 | `pyproject.toml` | Dependências e pins |
 | `.env.example` | Variáveis esperadas |
-| `src/ophion/models.py` | Modelos Pydantic do domínio (enum de causa, diagnóstico, decisão do guarda, produto, devolução, busca falha) |
-| `src/ophion/estimate.py` | Estimativa de perda em R$ |
-| `src/ophion/fixid.py` | Identificador determinístico de correção |
-| `src/ophion/adapters/base.py` | Protocolo `CatalogAdapter` |
-| `src/ophion/adapters/fake.py` | Catálogo em memória (testes + demo) |
-| `src/ophion/adapters/shopify.py` | Shopify Admin GraphQL |
-| `src/ophion/seed.py` | Catálogo, buscas e devoluções semeados |
-| `src/ophion/state.py` | `TypedDict` do estado do grafo |
-| `src/ophion/nodes.py` | Os seis nós |
-| `src/ophion/graph.py` | Montagem do `StateGraph` |
+| `src/venditus/models.py` | Modelos Pydantic do domínio (enum de causa, diagnóstico, decisão do guarda, produto, devolução, busca falha) |
+| `src/venditus/estimate.py` | Estimativa de perda em R$ |
+| `src/venditus/fixid.py` | Identificador determinístico de correção |
+| `src/venditus/adapters/base.py` | Protocolo `CatalogAdapter` |
+| `src/venditus/adapters/fake.py` | Catálogo em memória (testes + demo) |
+| `src/venditus/adapters/shopify.py` | Shopify Admin GraphQL |
+| `src/venditus/seed.py` | Catálogo, buscas e devoluções semeados |
+| `src/venditus/state.py` | `TypedDict` do estado do grafo |
+| `src/venditus/nodes.py` | Os seis nós |
+| `src/venditus/graph.py` | Montagem do `StateGraph` |
 | `tests/` | Um arquivo por unidade |
 
 ---
@@ -51,7 +51,7 @@ Esta tarefa existe porque o plano será executado em outro ambiente e o LangGrap
 
 ```toml
 [project]
-name = "ophion"
+name = "venditus"
 version = "0.1.0"
 requires-python = ">=3.11"
 dependencies = [
@@ -71,7 +71,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/ophion"]
+packages = ["src/venditus"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src", "."]
@@ -135,8 +135,8 @@ git commit -m "chore: estrutura do projeto e smoke test da API do LangGraph"
 ## Task 1: Modelos de domínio
 
 **Files:**
-- Create: `src/ophion/__init__.py` (vazio)
-- Create: `src/ophion/models.py`
+- Create: `src/venditus/__init__.py` (vazio)
+- Create: `src/venditus/models.py`
 - Test: `tests/test_models.py`
 
 - [ ] **Step 1: Escrever o teste que falha**
@@ -145,7 +145,7 @@ git commit -m "chore: estrutura do projeto e smoke test da API do LangGraph"
 # tests/test_models.py
 import pytest
 from pydantic import ValidationError
-from ophion.models import Causa, CorrecaoProposta, Diagnostico, DecisaoGuarda, Produto, Devolucao
+from venditus.models import Causa, CorrecaoProposta, Diagnostico, DecisaoGuarda, Produto, Devolucao
 
 
 def test_causa_tem_as_seis_categorias():
@@ -192,12 +192,12 @@ def test_produto_e_devolucao():
 - [ ] **Step 2: Rodar o teste para confirmar que falha**
 
 Run: `.venv\Scripts\pytest tests/test_models.py -v`
-Expected: FAIL — `ModuleNotFoundError: No module named 'ophion.models'`
+Expected: FAIL — `ModuleNotFoundError: No module named 'venditus.models'`
 
 - [ ] **Step 3: Implementar**
 
 ```python
-# src/ophion/models.py
+# src/venditus/models.py
 from enum import Enum
 from typing import Literal
 
@@ -270,7 +270,7 @@ Expected: PASS — 6 passed
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/ophion/__init__.py src/ophion/models.py tests/test_models.py
+git add src/venditus/__init__.py src/venditus/models.py tests/test_models.py
 git commit -m "feat: modelos de dominio com as seis causas"
 ```
 
@@ -279,14 +279,14 @@ git commit -m "feat: modelos de dominio com as seis causas"
 ## Task 2: Estimativa de perda em R$
 
 **Files:**
-- Create: `src/ophion/estimate.py`
+- Create: `src/venditus/estimate.py`
 - Test: `tests/test_estimate.py`
 
 - [ ] **Step 1: Escrever o teste que falha**
 
 ```python
 # tests/test_estimate.py
-from ophion.estimate import CONVERSAO_ASSUMIDA, TICKET_MEDIO_BRL, perda_estimada
+from venditus.estimate import CONVERSAO_ASSUMIDA, TICKET_MEDIO_BRL, perda_estimada
 
 
 def test_parametros_default_documentados():
@@ -314,12 +314,12 @@ def test_parametros_sobrescritiveis():
 - [ ] **Step 2: Rodar o teste para confirmar que falha**
 
 Run: `.venv\Scripts\pytest tests/test_estimate.py -v`
-Expected: FAIL — `ModuleNotFoundError: No module named 'ophion.estimate'`
+Expected: FAIL — `ModuleNotFoundError: No module named 'venditus.estimate'`
 
 - [ ] **Step 3: Implementar**
 
 ```python
-# src/ophion/estimate.py
+# src/venditus/estimate.py
 """Estimativa de receita perdida por busca sem resultado.
 
 Os dois parâmetros são PREMISSAS declaradas, não medições. Devem aparecer na
@@ -350,7 +350,7 @@ Expected: PASS — 5 passed
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/ophion/estimate.py tests/test_estimate.py
+git add src/venditus/estimate.py tests/test_estimate.py
 git commit -m "feat: estimativa de perda com premissas explicitas"
 ```
 
@@ -361,14 +361,14 @@ git commit -m "feat: estimativa de perda com premissas explicitas"
 Este é o mecanismo que impede escrita duplicada quando o grafo retoma de um `interrupt()`.
 
 **Files:**
-- Create: `src/ophion/fixid.py`
+- Create: `src/venditus/fixid.py`
 - Test: `tests/test_fixid.py`
 
 - [ ] **Step 1: Escrever o teste que falha**
 
 ```python
 # tests/test_fixid.py
-from ophion.fixid import fix_id
+from venditus.fixid import fix_id
 
 
 def test_deterministico():
@@ -396,12 +396,12 @@ def test_formato():
 - [ ] **Step 2: Rodar o teste para confirmar que falha**
 
 Run: `.venv\Scripts\pytest tests/test_fixid.py -v`
-Expected: FAIL — `ModuleNotFoundError: No module named 'ophion.fixid'`
+Expected: FAIL — `ModuleNotFoundError: No module named 'venditus.fixid'`
 
 - [ ] **Step 3: Implementar**
 
 ```python
-# src/ophion/fixid.py
+# src/venditus/fixid.py
 import hashlib
 
 
@@ -424,7 +424,7 @@ Expected: PASS — 5 passed
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/ophion/fixid.py tests/test_fixid.py
+git add src/venditus/fixid.py tests/test_fixid.py
 git commit -m "feat: fix_id deterministico para idempotencia da escrita"
 ```
 
@@ -435,17 +435,17 @@ git commit -m "feat: fix_id deterministico para idempotencia da escrita"
 O fake é o que permite construir e testar o grafo inteiro sem depender da Shopify.
 
 **Files:**
-- Create: `src/ophion/adapters/__init__.py` (vazio)
-- Create: `src/ophion/adapters/base.py`
-- Create: `src/ophion/adapters/fake.py`
+- Create: `src/venditus/adapters/__init__.py` (vazio)
+- Create: `src/venditus/adapters/base.py`
+- Create: `src/venditus/adapters/fake.py`
 - Test: `tests/test_fake_adapter.py`
 
 - [ ] **Step 1: Escrever o teste que falha**
 
 ```python
 # tests/test_fake_adapter.py
-from ophion.adapters.fake import FakeCatalogAdapter
-from ophion.models import Produto
+from venditus.adapters.fake import FakeCatalogAdapter
+from venditus.models import Produto
 
 
 def _catalogo() -> list[Produto]:
@@ -508,15 +508,15 @@ def test_obter_produto():
 - [ ] **Step 2: Rodar o teste para confirmar que falha**
 
 Run: `.venv\Scripts\pytest tests/test_fake_adapter.py -v`
-Expected: FAIL — `ModuleNotFoundError: No module named 'ophion.adapters'`
+Expected: FAIL — `ModuleNotFoundError: No module named 'venditus.adapters'`
 
 - [ ] **Step 3: Implementar o protocolo**
 
 ```python
-# src/ophion/adapters/base.py
+# src/venditus/adapters/base.py
 from typing import Protocol
 
-from ophion.models import Produto
+from venditus.models import Produto
 
 
 class CatalogAdapter(Protocol):
@@ -543,10 +543,10 @@ class CatalogAdapter(Protocol):
 - [ ] **Step 4: Implementar o fake**
 
 ```python
-# src/ophion/adapters/fake.py
+# src/venditus/adapters/fake.py
 import unicodedata
 
-from ophion.models import Produto
+from venditus.models import Produto
 
 VALORES_VERDADEIROS = {"true", "sim", "1", "verdadeiro"}
 TAMANHO_MINIMO_TOKEN = 3
@@ -622,7 +622,7 @@ Expected: PASS — 7 passed
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/ophion/adapters tests/test_fake_adapter.py
+git add src/venditus/adapters tests/test_fake_adapter.py
 git commit -m "feat: protocolo de catalogo e adapter fake em memoria"
 ```
 
@@ -631,15 +631,15 @@ git commit -m "feat: protocolo de catalogo e adapter fake em memoria"
 ## Task 5: Dados semeados
 
 **Files:**
-- Create: `src/ophion/seed.py`
+- Create: `src/venditus/seed.py`
 - Test: `tests/test_seed.py`
 
 - [ ] **Step 1: Escrever o teste que falha**
 
 ```python
 # tests/test_seed.py
-from ophion.adapters.fake import FakeCatalogAdapter
-from ophion.seed import BUSCAS, CATALOGO, DEVOLUCOES, devolucoes_do_sku
+from venditus.adapters.fake import FakeCatalogAdapter
+from venditus.seed import BUSCAS, CATALOGO, DEVOLUCOES, devolucoes_do_sku
 
 
 def test_os_dois_skus_do_demo_existem():
@@ -684,19 +684,19 @@ def test_devolucoes_do_sku_desconhecido():
 - [ ] **Step 2: Rodar o teste para confirmar que falha**
 
 Run: `.venv\Scripts\pytest tests/test_seed.py -v`
-Expected: FAIL — `ModuleNotFoundError: No module named 'ophion.seed'`
+Expected: FAIL — `ModuleNotFoundError: No module named 'venditus.seed'`
 
 - [ ] **Step 3: Implementar**
 
 ```python
-# src/ophion/seed.py
+# src/venditus/seed.py
 """Dados sintéticos do demo.
 
 Assumido abertamente como sintético. Os dois SKUs abaixo entram no sistema
 com diagnóstico idêntico e saem com decisões opostas — é o que o demo prova.
 """
 
-from ophion.models import BuscaFalha, Devolucao, Produto
+from venditus.models import BuscaFalha, Devolucao, Produto
 
 CATALOGO: list[Produto] = [
     Produto(
@@ -765,7 +765,7 @@ Expected: PASS — 6 passed
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/ophion/seed.py tests/test_seed.py
+git add src/venditus/seed.py tests/test_seed.py
 git commit -m "feat: dados semeados com os dois casos do demo"
 ```
 
@@ -774,14 +774,14 @@ git commit -m "feat: dados semeados com os dois casos do demo"
 ## Task 6: Estado do grafo
 
 **Files:**
-- Create: `src/ophion/state.py`
+- Create: `src/venditus/state.py`
 - Test: `tests/test_state.py`
 
 - [ ] **Step 1: Escrever o teste que falha**
 
 ```python
 # tests/test_state.py
-from ophion.state import OphionState, estado_inicial
+from venditus.state import VenditusState, estado_inicial
 
 
 def test_estado_inicial():
@@ -794,7 +794,7 @@ def test_estado_inicial():
 
 
 def test_typeddict_tem_as_chaves_do_fluxo():
-    chaves = set(OphionState.__annotations__)
+    chaves = set(VenditusState.__annotations__)
     for k in ("termo", "volume", "perda_estimada", "diagnostico", "decisao_guarda",
               "fix_id", "resultados_antes", "resultados_depois", "status", "escreveu"):
         assert k in chaves
@@ -803,19 +803,19 @@ def test_typeddict_tem_as_chaves_do_fluxo():
 - [ ] **Step 2: Rodar o teste para confirmar que falha**
 
 Run: `.venv\Scripts\pytest tests/test_state.py -v`
-Expected: FAIL — `ModuleNotFoundError: No module named 'ophion.state'`
+Expected: FAIL — `ModuleNotFoundError: No module named 'venditus.state'`
 
 - [ ] **Step 3: Implementar**
 
 ```python
-# src/ophion/state.py
+# src/venditus/state.py
 from typing import TypedDict
 
-from ophion.estimate import perda_estimada
-from ophion.models import DecisaoGuarda, Diagnostico
+from venditus.estimate import perda_estimada
+from venditus.models import DecisaoGuarda, Diagnostico
 
 
-class OphionState(TypedDict, total=False):
+class VenditusState(TypedDict, total=False):
     """Estado que percorre o grafo.
 
     total=False porque os campos vão sendo preenchidos nó a nó.
@@ -833,8 +833,8 @@ class OphionState(TypedDict, total=False):
     escreveu: bool
 
 
-def estado_inicial(termo: str, volume: int) -> OphionState:
-    return OphionState(
+def estado_inicial(termo: str, volume: int) -> VenditusState:
+    return VenditusState(
         termo=termo,
         volume=volume,
         perda_estimada=perda_estimada(volume),
@@ -856,7 +856,7 @@ Expected: PASS — 2 passed
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/ophion/state.py tests/test_state.py
+git add src/venditus/state.py tests/test_state.py
 git commit -m "feat: estado do grafo"
 ```
 
@@ -865,19 +865,19 @@ git commit -m "feat: estado do grafo"
 ## Task 7: Nós sem LLM (ingest, quarentena, executor, verificador)
 
 **Files:**
-- Create: `src/ophion/nodes.py`
+- Create: `src/venditus/nodes.py`
 - Test: `tests/test_nodes_deterministicos.py`
 
 - [ ] **Step 1: Escrever o teste que falha**
 
 ```python
 # tests/test_nodes_deterministicos.py
-from ophion.adapters.fake import FakeCatalogAdapter
-from ophion.fixid import fix_id
-from ophion.models import Causa, CorrecaoProposta, DecisaoGuarda, Diagnostico
-from ophion.nodes import criar_executor, criar_ingest, criar_verificador, quarentena
-from ophion.seed import CATALOGO
-from ophion.state import estado_inicial
+from venditus.adapters.fake import FakeCatalogAdapter
+from venditus.fixid import fix_id
+from venditus.models import Causa, CorrecaoProposta, DecisaoGuarda, Diagnostico
+from venditus.nodes import criar_executor, criar_ingest, criar_verificador, quarentena
+from venditus.seed import CATALOGO
+from venditus.state import estado_inicial
 
 
 def _diag() -> Diagnostico:
@@ -939,23 +939,23 @@ def test_verificador_mede_antes_e_depois():
 - [ ] **Step 2: Rodar o teste para confirmar que falha**
 
 Run: `.venv\Scripts\pytest tests/test_nodes_deterministicos.py -v`
-Expected: FAIL — `ModuleNotFoundError: No module named 'ophion.nodes'`
+Expected: FAIL — `ModuleNotFoundError: No module named 'venditus.nodes'`
 
 - [ ] **Step 3: Implementar**
 
 ```python
-# src/ophion/nodes.py
+# src/venditus/nodes.py
 from collections.abc import Callable
 
-from ophion.adapters.base import CatalogAdapter
-from ophion.fixid import fix_id as calcular_fix_id
-from ophion.state import OphionState
+from venditus.adapters.base import CatalogAdapter
+from venditus.fixid import fix_id as calcular_fix_id
+from venditus.state import VenditusState
 
-Node = Callable[[OphionState], OphionState]
+Node = Callable[[VenditusState], VenditusState]
 
 
 def criar_ingest(catalogo: CatalogAdapter) -> Node:
-    def ingest(state: OphionState) -> OphionState:
+    def ingest(state: VenditusState) -> VenditusState:
         return {
             **state,
             "resultados_antes": len(catalogo.buscar(state["termo"])),
@@ -965,7 +965,7 @@ def criar_ingest(catalogo: CatalogAdapter) -> Node:
     return ingest
 
 
-def quarentena(state: OphionState) -> OphionState:
+def quarentena(state: VenditusState) -> VenditusState:
     """Encerra o fluxo sem escrever. O caso vira hipótese para qualidade."""
     return {**state, "status": "quarentena", "escreveu": False}
 
@@ -978,7 +978,7 @@ def criar_executor(catalogo: CatalogAdapter) -> Node:
     fix_id, cada retomada duplicaria a escrita.
     """
 
-    def executor(state: OphionState) -> OphionState:
+    def executor(state: VenditusState) -> VenditusState:
         diagnostico = state.get("diagnostico")
         if diagnostico is None or diagnostico.correcao is None:
             return {**state, "status": "sem_correcao", "escreveu": False}
@@ -996,7 +996,7 @@ def criar_executor(catalogo: CatalogAdapter) -> Node:
 
 
 def criar_verificador(catalogo: CatalogAdapter) -> Node:
-    def verificador(state: OphionState) -> OphionState:
+    def verificador(state: VenditusState) -> VenditusState:
         return {
             **state,
             "resultados_depois": len(catalogo.buscar(state["termo"])),
@@ -1014,7 +1014,7 @@ Expected: PASS — 5 passed
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/ophion/nodes.py tests/test_nodes_deterministicos.py
+git add src/venditus/nodes.py tests/test_nodes_deterministicos.py
 git commit -m "feat: nos deterministicos com executor idempotente"
 ```
 
@@ -1025,7 +1025,7 @@ git commit -m "feat: nos deterministicos com executor idempotente"
 O LLM é injetado, então o teste roda sem rede e sem chave.
 
 **Files:**
-- Modify: `src/ophion/nodes.py` (adicionar aos imports do topo e ao corpo)
+- Modify: `src/venditus/nodes.py` (adicionar aos imports do topo e ao corpo)
 - Create: `tests/__init__.py` (vazio)
 - Create: `tests/fakes.py`
 - Test: `tests/test_investigador.py`
@@ -1057,11 +1057,11 @@ class FakeLLM:
 
 ```python
 # tests/test_investigador.py
-from ophion.adapters.fake import FakeCatalogAdapter
-from ophion.models import Causa, CorrecaoProposta, Diagnostico
-from ophion.nodes import criar_investigador
-from ophion.seed import CATALOGO
-from ophion.state import estado_inicial
+from venditus.adapters.fake import FakeCatalogAdapter
+from venditus.models import Causa, CorrecaoProposta, Diagnostico
+from venditus.nodes import criar_investigador
+from venditus.seed import CATALOGO
+from venditus.state import estado_inicial
 from tests.fakes import FakeLLM
 
 
@@ -1098,10 +1098,10 @@ def test_prompt_inclui_termo_e_catalogo():
 Run: `.venv\Scripts\pytest tests/test_investigador.py -v`
 Expected: FAIL — `ImportError: cannot import name 'criar_investigador'`
 
-- [ ] **Step 4: Implementar — acrescentar ao final de `src/ophion/nodes.py`**
+- [ ] **Step 4: Implementar — acrescentar ao final de `src/venditus/nodes.py`**
 
 ```python
-from ophion.models import Diagnostico
+from venditus.models import Diagnostico
 
 PROMPT_INVESTIGADOR = """Você analisa por que uma busca no e-commerce não retornou resultados.
 
@@ -1141,7 +1141,7 @@ def _formatar_catalogo(catalogo: CatalogAdapter) -> str:
 def criar_investigador(llm, catalogo: CatalogAdapter) -> Node:
     modelo = llm.with_structured_output(Diagnostico)
 
-    def investigador(state: OphionState) -> OphionState:
+    def investigador(state: VenditusState) -> VenditusState:
         prompt = PROMPT_INVESTIGADOR.format(
             termo=state["termo"],
             resultados=state.get("resultados_antes", 0),
@@ -1160,7 +1160,7 @@ Expected: PASS — 2 passed
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/ophion/nodes.py tests/__init__.py tests/fakes.py tests/test_investigador.py
+git add src/venditus/nodes.py tests/__init__.py tests/fakes.py tests/test_investigador.py
 git commit -m "feat: no investigador com saida tipada"
 ```
 
@@ -1169,16 +1169,16 @@ git commit -m "feat: no investigador com saida tipada"
 ## Task 9: Nó guarda (LLM) — o diferencial
 
 **Files:**
-- Modify: `src/ophion/nodes.py` (append)
+- Modify: `src/venditus/nodes.py` (append)
 - Test: `tests/test_guarda.py`
 
 - [ ] **Step 1: Escrever o teste que falha**
 
 ```python
 # tests/test_guarda.py
-from ophion.models import Causa, CorrecaoProposta, DecisaoGuarda, Diagnostico
-from ophion.nodes import criar_guarda
-from ophion.state import estado_inicial
+from venditus.models import Causa, CorrecaoProposta, DecisaoGuarda, Diagnostico
+from venditus.nodes import criar_guarda
+from venditus.state import estado_inicial
 from tests.fakes import FakeLLM
 
 
@@ -1232,11 +1232,11 @@ def test_sem_correcao_permite_sem_chamar_o_llm():
 Run: `.venv\Scripts\pytest tests/test_guarda.py -v`
 Expected: FAIL — `ImportError: cannot import name 'criar_guarda'`
 
-- [ ] **Step 3: Implementar — acrescentar ao final de `src/ophion/nodes.py`**
+- [ ] **Step 3: Implementar — acrescentar ao final de `src/venditus/nodes.py`**
 
 ```python
-from ophion.models import DecisaoGuarda
-from ophion.seed import devolucoes_do_sku
+from venditus.models import DecisaoGuarda
+from venditus.seed import devolucoes_do_sku
 
 PROMPT_GUARDA = """Você audita uma correção de catálogo antes de ela ser aplicada.
 
@@ -1262,7 +1262,7 @@ devoluções sustentam isso."""
 def criar_guarda(llm) -> Node:
     modelo = llm.with_structured_output(DecisaoGuarda)
 
-    def guarda(state: OphionState) -> OphionState:
+    def guarda(state: VenditusState) -> VenditusState:
         diagnostico = state.get("diagnostico")
         if diagnostico is None or diagnostico.correcao is None:
             decisao = DecisaoGuarda(
@@ -1294,7 +1294,7 @@ Expected: PASS — 4 passed
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/ophion/nodes.py tests/test_guarda.py
+git add src/venditus/nodes.py tests/test_guarda.py
 git commit -m "feat: no guarda que recusa correcao contradita pelo pos-venda"
 ```
 
@@ -1303,7 +1303,7 @@ git commit -m "feat: no guarda que recusa correcao contradita pelo pos-venda"
 ## Task 10: Montagem do grafo com interrupt e checkpointer
 
 **Files:**
-- Create: `src/ophion/graph.py`
+- Create: `src/venditus/graph.py`
 - Test: `tests/test_graph.py`
 
 - [ ] **Step 1: Escrever o teste que falha**
@@ -1313,11 +1313,11 @@ git commit -m "feat: no guarda que recusa correcao contradita pelo pos-venda"
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.types import Command
 
-from ophion.adapters.fake import FakeCatalogAdapter
-from ophion.graph import construir_grafo
-from ophion.models import Causa, CorrecaoProposta, DecisaoGuarda, Diagnostico
-from ophion.seed import CATALOGO
-from ophion.state import estado_inicial
+from venditus.adapters.fake import FakeCatalogAdapter
+from venditus.graph import construir_grafo
+from venditus.models import Causa, CorrecaoProposta, DecisaoGuarda, Diagnostico
+from venditus.seed import CATALOGO
+from venditus.state import estado_inicial
 from tests.fakes import FakeLLM
 
 
@@ -1380,17 +1380,17 @@ def test_rejeicao_humana_nao_escreve():
 - [ ] **Step 2: Rodar o teste para confirmar que falha**
 
 Run: `.venv\Scripts\pytest tests/test_graph.py -v`
-Expected: FAIL — `ModuleNotFoundError: No module named 'ophion.graph'`
+Expected: FAIL — `ModuleNotFoundError: No module named 'venditus.graph'`
 
 - [ ] **Step 3: Implementar**
 
 ```python
-# src/ophion/graph.py
+# src/venditus/graph.py
 from langgraph.graph import END, START, StateGraph
 from langgraph.types import interrupt
 
-from ophion.adapters.base import CatalogAdapter
-from ophion.nodes import (
+from venditus.adapters.base import CatalogAdapter
+from venditus.nodes import (
     criar_executor,
     criar_guarda,
     criar_ingest,
@@ -1398,10 +1398,10 @@ from ophion.nodes import (
     criar_verificador,
     quarentena,
 )
-from ophion.state import OphionState
+from venditus.state import VenditusState
 
 
-def aprovacao(state: OphionState) -> OphionState:
+def aprovacao(state: VenditusState) -> VenditusState:
     """Ponto de parada para decisão humana.
 
     Este nó NÃO escreve nada. Retomar de um interrupt() re-executa o nó inteiro
@@ -1422,12 +1422,12 @@ def aprovacao(state: OphionState) -> OphionState:
     return {**state, "status": "aprovado" if aprovado else "rejeitado"}
 
 
-def rotear_apos_guarda(state: OphionState) -> str:
+def rotear_apos_guarda(state: VenditusState) -> str:
     decisao = state.get("decisao_guarda")
     return "aprovacao" if decisao is not None and decisao.permitir else "quarentena"
 
 
-def rotear_apos_aprovacao(state: OphionState) -> str:
+def rotear_apos_aprovacao(state: VenditusState) -> str:
     return "executor" if state.get("status") == "aprovado" else "fim"
 
 
@@ -1437,7 +1437,7 @@ def construir_grafo(
     llm_guarda,
     checkpointer,
 ):
-    g = StateGraph(OphionState)
+    g = StateGraph(VenditusState)
 
     g.add_node("ingest", criar_ingest(catalogo))
     g.add_node("investigador", criar_investigador(llm_investigador, catalogo))
@@ -1482,7 +1482,7 @@ Expected: PASS — todos os testes
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/ophion/graph.py tests/test_graph.py
+git add src/venditus/graph.py tests/test_graph.py
 git commit -m "feat: grafo com aresta de guarda e aprovacao humana antes da escrita"
 ```
 
@@ -1504,9 +1504,9 @@ from pathlib import Path
 
 from langgraph.checkpoint.memory import MemorySaver
 
-from ophion.adapters.fake import FakeCatalogAdapter
-from ophion.graph import construir_grafo
-from ophion.seed import CATALOGO
+from venditus.adapters.fake import FakeCatalogAdapter
+from venditus.graph import construir_grafo
+from venditus.seed import CATALOGO
 
 
 class _Stub:
@@ -1564,18 +1564,18 @@ git commit -m "feat: geracao do diagrama de arquitetura"
 Só agora, porque tudo acima já funciona sem a Shopify.
 
 **Files:**
-- Create: `src/ophion/adapters/shopify.py`
+- Create: `src/venditus/adapters/shopify.py`
 - Create: `scripts/testar_shopify.py`
 
 - [ ] **Step 1: Implementar o adapter**
 
 ```python
-# src/ophion/adapters/shopify.py
+# src/venditus/adapters/shopify.py
 import os
 
 import httpx
 
-from ophion.models import Produto
+from venditus.models import Produto
 
 QUERY_PRODUTOS = """
 query listarProdutos($n: Int!) {
@@ -1586,7 +1586,7 @@ query listarProdutos($n: Int!) {
       description
       totalInventory
       variants(first: 1) { nodes { sku } }
-      metafields(first: 20, namespace: "ophion") {
+      metafields(first: 20, namespace: "venditus") {
         nodes { key value }
       }
     }
@@ -1662,7 +1662,7 @@ class ShopifyCatalogAdapter:
         return next((p for p in self.listar_produtos() if p.sku == sku), None)
 
     def buscar(self, termo: str) -> list[Produto]:
-        from ophion.adapters.fake import FakeCatalogAdapter
+        from venditus.adapters.fake import FakeCatalogAdapter
 
         return FakeCatalogAdapter(self.listar_produtos()).buscar(termo)
 
@@ -1677,7 +1677,7 @@ class ShopifyCatalogAdapter:
 
         dados = self._post(MUTATION_METAFIELD, {
             "metafields": [{
-                "ownerId": gid, "namespace": "ophion",
+                "ownerId": gid, "namespace": "venditus",
                 "key": campo, "value": valor, "type": "single_line_text_field",
             }]
         })
@@ -1700,8 +1700,8 @@ class ShopifyCatalogAdapter:
 """Confere conectividade e escrita reais. Rode uma vez após criar a dev store."""
 from dotenv import load_dotenv
 
-from ophion.adapters.shopify import ShopifyCatalogAdapter
-from ophion.fixid import fix_id
+from venditus.adapters.shopify import ShopifyCatalogAdapter
+from venditus.fixid import fix_id
 
 load_dotenv()
 
@@ -1712,9 +1712,9 @@ for p in produtos[:5]:
     print(f"  {p.sku} | {p.titulo} | estoque={p.estoque} | atributos={p.atributos}")
 
 alvo = produtos[0]
-fid = fix_id(alvo.sku, "teste_ophion", "ok")
-print("escrita:", a.aplicar_correcao(alvo.sku, "teste_ophion", "ok", fid))
-print("idempotente (deve ser False):", a.aplicar_correcao(alvo.sku, "teste_ophion", "ok", fid))
+fid = fix_id(alvo.sku, "teste_venditus", "ok")
+print("escrita:", a.aplicar_correcao(alvo.sku, "teste_venditus", "ok", fid))
+print("idempotente (deve ser False):", a.aplicar_correcao(alvo.sku, "teste_venditus", "ok", fid))
 ```
 
 - [ ] **Step 3: Rodar contra a loja real**
@@ -1727,7 +1727,7 @@ Se falhar com 401, o token não tem escopo. A Admin API precisa de `read_product
 - [ ] **Step 4: Commit**
 
 ```bash
-git add src/ophion/adapters/shopify.py scripts/testar_shopify.py
+git add src/venditus/adapters/shopify.py scripts/testar_shopify.py
 git commit -m "feat: adapter Shopify Admin GraphQL"
 ```
 
@@ -1736,13 +1736,13 @@ git commit -m "feat: adapter Shopify Admin GraphQL"
 ## Task 13: Ponto de entrada e manifesto do LangGraph
 
 **Files:**
-- Create: `src/ophion/app.py`
+- Create: `src/venditus/app.py`
 - Create: `langgraph.json`
 
 - [ ] **Step 1: Criar o ponto de entrada**
 
 ```python
-# src/ophion/app.py
+# src/venditus/app.py
 """Monta o grafo com as dependências reais.
 
 REGRA: nunca passar temperature ou top_p. Em modelos GPT-5.x de raciocínio,
@@ -1755,9 +1755,9 @@ from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.sqlite import SqliteSaver
 
-from ophion.adapters.fake import FakeCatalogAdapter
-from ophion.graph import construir_grafo
-from ophion.seed import CATALOGO
+from venditus.adapters.fake import FakeCatalogAdapter
+from venditus.graph import construir_grafo
+from venditus.seed import CATALOGO
 
 load_dotenv()
 
@@ -1769,7 +1769,7 @@ def montar(usar_shopify: bool | None = None):
         usar_shopify = bool(os.environ.get("SHOPIFY_ADMIN_TOKEN"))
 
     if usar_shopify:
-        from ophion.adapters.shopify import ShopifyCatalogAdapter
+        from venditus.adapters.shopify import ShopifyCatalogAdapter
 
         catalogo = ShopifyCatalogAdapter()
     else:
@@ -1792,7 +1792,7 @@ grafo = montar()
 {
   "dependencies": ["."],
   "graphs": {
-    "ophion": "./src/ophion/app.py:grafo"
+    "venditus": "./src/venditus/app.py:grafo"
   },
   "env": ".env"
 }
@@ -1800,7 +1800,7 @@ grafo = montar()
 
 - [ ] **Step 3: Verificar que monta**
 
-Run: `.venv\Scripts\python -c "from ophion.app import grafo; print(grafo)"`
+Run: `.venv\Scripts\python -c "from venditus.app import grafo; print(grafo)"`
 Expected: imprime o objeto do grafo compilado, sem exceção.
 
 Se `SqliteSaver.from_conn_string` exigir uso como context manager na versão instalada, troque por:
@@ -1816,7 +1816,7 @@ checkpointer = SqliteSaver(conn)
 - [ ] **Step 4: Commit**
 
 ```bash
-git add src/ophion/app.py langgraph.json
+git add src/venditus/app.py langgraph.json
 git commit -m "feat: ponto de entrada e manifesto do langgraph"
 ```
 
@@ -1830,16 +1830,16 @@ e **taxa de bloqueio do guarda** — são agregados e precisam de código própr
 A taxa de bloqueio é a métrica do diferencial: nenhum concorrente consegue calculá-la.
 
 **Files:**
-- Create: `src/ophion/metrics.py`
+- Create: `src/venditus/metrics.py`
 - Test: `tests/test_metrics.py`
 
 - [ ] **Step 1: Escrever o teste que falha**
 
 ```python
 # tests/test_metrics.py
-from ophion.metrics import cobertura_de_atributo, receita_recuperada, resumo_kpis, taxa_de_bloqueio
-from ophion.models import Produto
-from ophion.state import estado_inicial
+from venditus.metrics import cobertura_de_atributo, receita_recuperada, resumo_kpis, taxa_de_bloqueio
+from venditus.models import Produto
+from venditus.state import estado_inicial
 
 
 def _produtos():
@@ -1895,21 +1895,21 @@ def test_resumo_reune_os_quatro_kpis():
 - [ ] **Step 2: Rodar o teste para confirmar que falha**
 
 Run: `.venv\Scripts\pytest tests/test_metrics.py -v`
-Expected: FAIL — `ModuleNotFoundError: No module named 'ophion.metrics'`
+Expected: FAIL — `ModuleNotFoundError: No module named 'venditus.metrics'`
 
 - [ ] **Step 3: Implementar**
 
 ```python
-# src/ophion/metrics.py
+# src/venditus/metrics.py
 """KPIs agregados do dashboard.
 
 Operam sobre uma lista de estados finais de execução, mantida pela camada que
 roda o grafo. Nenhum acoplamento com o checkpointer.
 """
 
-from ophion.adapters.fake import VALORES_VERDADEIROS
-from ophion.models import Produto
-from ophion.state import OphionState
+from venditus.adapters.fake import VALORES_VERDADEIROS
+from venditus.models import Produto
+from venditus.state import VenditusState
 
 STATUS_BLOQUEADO = "quarentena"
 
@@ -1925,7 +1925,7 @@ def cobertura_de_atributo(produtos: list[Produto], campo: str) -> float:
     return preenchidos / len(produtos)
 
 
-def taxa_de_bloqueio(estados: list[OphionState]) -> float:
+def taxa_de_bloqueio(estados: list[VenditusState]) -> float:
     """Fração de execuções que o guarda recusou.
 
     É a métrica do diferencial: só existe porque o motor lê pré e pós-venda.
@@ -1936,12 +1936,12 @@ def taxa_de_bloqueio(estados: list[OphionState]) -> float:
     return bloqueados / len(estados)
 
 
-def receita_recuperada(estados: list[OphionState]) -> float:
+def receita_recuperada(estados: list[VenditusState]) -> float:
     """Soma da perda estimada apenas das execuções que resultaram em escrita."""
     return round(sum(e.get("perda_estimada", 0.0) for e in estados if e.get("escreveu")), 2)
 
 
-def resumo_kpis(produtos: list[Produto], estados: list[OphionState], campo: str) -> dict:
+def resumo_kpis(produtos: list[Produto], estados: list[VenditusState], campo: str) -> dict:
     return {
         "cobertura_de_atributo": cobertura_de_atributo(produtos, campo),
         "receita_recuperada": receita_recuperada(estados),
@@ -1959,7 +1959,7 @@ Expected: PASS — 6 passed
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/ophion/metrics.py tests/test_metrics.py
+git add src/venditus/metrics.py tests/test_metrics.py
 git commit -m "feat: KPIs agregados incluindo taxa de bloqueio do guarda"
 ```
 
@@ -1982,7 +1982,7 @@ chamadas reais, e nada mais depende dela.
 ```python
 # tests/dados_rotulados.py
 """Queries com causa esperada, rotuladas à mão contra o catálogo de seed."""
-from ophion.models import Causa
+from venditus.models import Causa
 
 ROTULADOS: list[tuple[str, Causa]] = [
     ("tênis impermeável", Causa.ATRIBUTO_AUSENTE),
@@ -2019,11 +2019,11 @@ Faz chamadas reais ao modelo. Exige OPENAI_API_KEY.
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 
-from ophion.adapters.fake import FakeCatalogAdapter
-from ophion.app import MODELO
-from ophion.nodes import criar_investigador
-from ophion.seed import CATALOGO
-from ophion.state import estado_inicial
+from venditus.adapters.fake import FakeCatalogAdapter
+from venditus.app import MODELO
+from venditus.nodes import criar_investigador
+from venditus.seed import CATALOGO
+from venditus.state import estado_inicial
 from tests.dados_rotulados import ROTULADOS
 
 load_dotenv()
@@ -2077,7 +2077,7 @@ git commit -m "feat: avaliacao de acuracia do classificador"
 - [ ] `test_caminho_bloqueado_nao_escreve` passa — **é a prova da tese**
 - [ ] `test_executor_e_idempotente` passa — **é a prova de que a retomada do interrupt não duplica escrita**
 - [ ] `docs/arquitetura/grafo.mmd` mostra duas arestas saindo de `guarda`
-- [ ] `python -c "from ophion.app import grafo"` monta sem erro
+- [ ] `python -c "from venditus.app import grafo"` monta sem erro
 - [ ] Nenhuma ocorrência de `temperature` no código: `git grep -n temperature -- src/` retorna vazio
 - [ ] `resumo_kpis` devolve os quatro números do dashboard do spec
 - [ ] Acurácia do classificador registrada (Task 15) — ou explicitamente cortada por tempo

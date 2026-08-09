@@ -1,4 +1,4 @@
-# OPHION — instruções para agentes
+# Venditus — instruções para agentes
 
 ## O que é
 
@@ -10,8 +10,8 @@ A tese em uma frase: *busca dá volume mas não dá verdade; devolução dá ver
 não dá volume. Juntar os dois permite distinguir uma correção de uma mentira.*
 
 **Documentos de referência — leia antes de codar:**
-- Spec: `docs/superpowers/specs/2026-08-09-ophion-mvp-design.md`
-- Plano: `docs/superpowers/plans/2026-08-09-ophion-backend.md`
+- Spec: `docs/superpowers/specs/2026-08-09-venditus-mvp-design.md`
+- Plano: `docs/superpowers/plans/2026-08-09-venditus-backend.md`
 
 O plano tem 15 tarefas em TDD, com código completo em cada passo. Siga na ordem.
 
