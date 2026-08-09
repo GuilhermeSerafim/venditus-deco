@@ -7,7 +7,8 @@ from collections.abc import Callable
 
 from venditus.adapters.base import CatalogAdapter
 from venditus.fixid import fix_id as calcular_fix_id
-from venditus.models import Diagnostico
+from venditus.models import DecisaoGuarda, Diagnostico
+from venditus.seed import devolucoes_do_sku
 from venditus.state import VenditusState
 
 Node = Callable[[VenditusState], VenditusState]
@@ -116,3 +117,51 @@ def criar_investigador(llm, catalogo: CatalogAdapter) -> Node:
         return {**state, "diagnostico": modelo.invoke(prompt), "status": "diagnosticado"}
 
     return investigador
+
+
+PROMPT_GUARDA = """Você audita uma correção de catálogo antes de ela ser aplicada.
+
+Correção proposta: gravar {campo} = {valor} no produto {sku}
+Evidência usada pelo investigador: {evidencia}
+
+Devoluções deste produto nos últimos 90 dias:
+{devolucoes}
+
+Pergunta: as devoluções CONTRADIZEM o atributo que se quer gravar?
+
+Contradiz quando os clientes relatam justamente a ausência da característica
+que o atributo afirma. Nesse caso, gravar o atributo aumentaria devolução —
+o problema não é o catálogo, é a descrição do produto ou o próprio produto.
+
+Não contradiz quando as devoluções tratam de outros assuntos (tamanho, cor,
+prazo, arrependimento).
+
+Responda permitir=false apenas se houver contradição direta, e informe quantas
+devoluções sustentam isso."""
+
+
+def criar_guarda(llm) -> Node:
+    modelo = llm.with_structured_output(DecisaoGuarda)
+
+    def guarda(state: VenditusState) -> VenditusState:
+        diagnostico = state.get("diagnostico")
+        if diagnostico is None or diagnostico.correcao is None:
+            decisao = DecisaoGuarda(
+                permitir=True, justificativa="Nenhuma escrita proposta.", devolucoes_contraditorias=0
+            )
+            return {**state, "decisao_guarda": decisao, "status": "aprovado_pelo_guarda"}
+
+        c = diagnostico.correcao
+        devolucoes = devolucoes_do_sku(c.sku)
+        texto = "\n".join(f"- ({d.dias_atras}d) {d.motivo}" for d in devolucoes) or "nenhuma"
+
+        decisao = modelo.invoke(
+            PROMPT_GUARDA.format(
+                campo=c.campo, valor=c.valor, sku=c.sku,
+                evidencia=diagnostico.evidencia, devolucoes=texto,
+            )
+        )
+        status = "aprovado_pelo_guarda" if decisao.permitir else "bloqueado_pelo_guarda"
+        return {**state, "decisao_guarda": decisao, "status": status}
+
+    return guarda
