@@ -212,4 +212,4 @@ O motor tem **dois leitores desenhados e um construído**. O guarda prova que o 
 
 ---
 
-<sub>🌱 Dados do demo são sintéticos, e isso é assumido abertamente. Estimativas de R$ são premissas declaradas, não medições.</sub>
+<sub>🌱 Dados do demo são sintéticos. Estimativas de R$ são premissas declaradas, não medições.</sub>
