@@ -7,6 +7,7 @@ from collections.abc import Callable
 
 from venditus.adapters.base import CatalogAdapter
 from venditus.fixid import fix_id as calcular_fix_id
+from venditus.models import Diagnostico
 from venditus.state import VenditusState
 
 Node = Callable[[VenditusState], VenditusState]
@@ -66,3 +67,52 @@ def criar_verificador(catalogo: CatalogAdapter) -> Node:
         }
 
     return verificador
+
+
+PROMPT_INVESTIGADOR = """Você analisa por que uma busca no e-commerce não retornou resultados.
+
+Termo buscado: "{termo}"
+Resultados retornados: {resultados}
+
+Catálogo disponível:
+{catalogo}
+
+Classifique a causa em uma das seis categorias e, quando couber, proponha UMA
+correção de atributo estruturado.
+
+Regras:
+- "atributo_ausente": o produto existe e a descrição sustenta o termo, mas o
+  atributo estruturado correspondente está vazio. Proponha preenchê-lo.
+- "sinonimo": o cliente usa uma palavra que o catálogo não usa.
+- "typo": erro de digitação no termo.
+- "categorizacao_errada": o produto está na categoria errada.
+- "sem_estoque": o produto existe mas está zerado. NÃO proponha correção.
+- "sem_sortimento": a loja não vende esse produto. NÃO proponha correção.
+
+Cite na evidência o trecho literal do catálogo que sustenta seu diagnóstico."""
+
+
+def _formatar_catalogo(catalogo: CatalogAdapter) -> str:
+    linhas = []
+    for p in catalogo.listar_produtos():
+        atributos = ", ".join(f"{k}={v!r}" for k, v in p.atributos.items()) or "nenhum"
+        linhas.append(
+            f"- {p.sku} | {p.titulo} | estoque={p.estoque}\n"
+            f"  descrição: {p.descricao}\n"
+            f"  atributos: {atributos}"
+        )
+    return "\n".join(linhas)
+
+
+def criar_investigador(llm, catalogo: CatalogAdapter) -> Node:
+    modelo = llm.with_structured_output(Diagnostico)
+
+    def investigador(state: VenditusState) -> VenditusState:
+        prompt = PROMPT_INVESTIGADOR.format(
+            termo=state["termo"],
+            resultados=state.get("resultados_antes", 0),
+            catalogo=_formatar_catalogo(catalogo),
+        )
+        return {**state, "diagnostico": modelo.invoke(prompt), "status": "diagnosticado"}
+
+    return investigador
