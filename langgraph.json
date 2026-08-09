@@ -1,0 +1,7 @@
+{
+  "dependencies": ["."],
+  "graphs": {
+    "venditus": "./src/venditus/app.py:grafo"
+  },
+  "env": ".env"
+}

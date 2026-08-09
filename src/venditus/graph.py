@@ -59,8 +59,14 @@ def construir_grafo(
     catalogo: CatalogAdapter,
     llm_investigador,
     llm_guarda,
-    checkpointer,
+    checkpointer=None,
 ):
+    """Monta e compila o grafo.
+
+    checkpointer=None e o correto para servir sob `langgraph dev`: o servidor
+    fornece a propria persistencia. Para uso programatico (testes, scripts),
+    passe um checkpointer — sem ele o interrupt() nao tem onde salvar o estado.
+    """
     """Monta e compila o grafo Venditus com os adaptadores e LLMs fornecidos."""
     g = StateGraph(VenditusState)
 
