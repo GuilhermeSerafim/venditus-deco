@@ -51,6 +51,24 @@ def test_executor_e_idempotente():
     assert a.escritas == 1
 
 
+def test_executor_sem_correcao_nao_escreve():
+    # Causas SEM_ESTOQUE e SEM_SORTIMENTO nao geram correcao. O guarda aprova
+    # esses casos sem chamar o LLM, entao o executor recebe correcao=None no
+    # fluxo real — este branch e alcancavel, nao defensivo.
+    a = FakeCatalogAdapter(CATALOGO)
+    s = estado_inicial("mochila cargueira 80 litros", 64)
+    s["diagnostico"] = Diagnostico(
+        causa=Causa.SEM_SORTIMENTO,
+        confianca="alta",
+        evidencia="não há item de 80L no catálogo",
+        correcao=None,
+    )
+    saida = criar_executor(a)(s)
+    assert saida["status"] == "sem_correcao"
+    assert saida["escreveu"] is False
+    assert a.escritas == 0
+
+
 def test_verificador_mede_antes_e_depois():
     a = FakeCatalogAdapter(CATALOGO)
     s = estado_inicial("tênis impermeável", 340)
