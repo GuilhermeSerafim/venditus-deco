@@ -23,8 +23,8 @@ CAMPO = "impermeavel"
 TERMO = "tênis impermeável"
 
 APAGAR_METAFIELD = """
-mutation apagar($input: MetafieldsDeleteInput!) {
-  metafieldsDelete(metafields: [$input]) {
+mutation apagar($metafields: [MetafieldIdentifierInput!]!) {
+  metafieldsDelete(metafields: $metafields) {
     deletedMetafields { key }
     userErrors { message }
   }
@@ -39,7 +39,7 @@ def resetar(adapter: ShopifyCatalogAdapter) -> None:
         raise SystemExit(f"{SKU} nao encontrado na loja.")
     dados = adapter._chamar(
         APAGAR_METAFIELD,
-        {"input": {"ownerId": gid, "namespace": NAMESPACE, "key": CAMPO}},
+        {"metafields": [{"ownerId": gid, "namespace": NAMESPACE, "key": CAMPO}]},
     )
     erros = dados["metafieldsDelete"]["userErrors"]
     print(f"reset: {'erros=' + str(erros) if erros else 'atributo removido de ' + SKU}")

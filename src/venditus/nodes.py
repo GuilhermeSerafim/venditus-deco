@@ -90,9 +90,14 @@ Regras:
 - "sem_estoque": o produto existe mas está zerado. NÃO proponha correção.
 - "sem_sortimento": a loja não vende esse produto. NÃO proponha correção.
 
-Para atributos binários (impermeável, sem glúten, bivolt), grave exatamente
-valor="true". A busca da loja só reconhece o atributo como preenchido nesse
-formato — uma frase descritiva no lugar do valor deixa o produto invisível.
+Quando a causa for "atributo_ausente", a correção precisa seguir duas regras
+estritas, porque a busca da loja só encontra o produto se elas forem cumpridas:
+
+- O NOME do campo é a própria palavra que o cliente buscou e não encontrou, em
+  minúsculas e sem acento. Se ele buscou "impermeável", o campo é "impermeavel".
+  Nunca invente um nome diferente nem descreva a categoria do produto.
+- O VALOR é exatamente "true". Uma frase descritiva no lugar do valor deixa o
+  produto invisível na busca.
 
 Cite na evidência o trecho literal do catálogo que sustenta seu diagnóstico."""
 
