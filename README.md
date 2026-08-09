@@ -22,14 +22,26 @@ Hackathon **deco — Agents for Commerce** · 2026
 
 ## 💡 A ideia
 
-Os dois sinais cobrem o ponto cego um do outro:
+Existem dois sinais na loja, e cada um enxerga metade do problema.
 
-| Sinal | Dá | Não dá |
-|---|---|---|
-| 🔍 Busca sem resultado | **volume** — onde olhar | **verdade** — o produto *é* impermeável? |
-| 📦 Texto de devolução | **verdade** — o atributo real | **volume** — 12 casos, com 30 dias de atraso |
+#### 🔍 A busca mostra **onde** está o dinheiro — mas não mostra a verdade
 
-Juntar os dois cria uma capacidade que nenhum lado tem sozinho: **distinguir uma correção de uma mentira.**
+340 pessoas procuraram *"tênis impermeável"* e não acharam nada. Você sabe que tem venda parada ali, e sabe quanto vale.
+
+O que a busca **não** sabe: se o tênis é mesmo impermeável. Isso ela só pode inferir da descrição — um texto escrito pelo marketing.
+
+#### 📦 A devolução mostra a **verdade** — mas não mostra o tamanho
+
+Oito pessoas que compraram a capa de chuva escreveram que ela molha. Isso é fato, dito por quem usou o produto.
+
+O que a devolução **não** sabe: quantas vendas estão sendo perdidas por causa disso, nem onde procurar a próxima. São oito pessoas, e a informação chega 30 dias depois da compra.
+
+#### 🧩 Sozinho, cada sinal leva a uma decisão errada
+
+A busca sozinha manda marcar **os dois** produtos como impermeáveis — e um deles não é.
+A devolução sozinha nunca conta que existe uma venda perdida esperando ser recuperada.
+
+Juntos, eles permitem uma coisa que nenhum dos dois faz separado: **distinguir uma correção de uma mentira.**
 
 ### O exemplo que define o produto
 

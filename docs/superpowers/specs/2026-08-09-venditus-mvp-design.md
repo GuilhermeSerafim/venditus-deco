@@ -27,12 +27,21 @@ Restrição dominante: **20 horas**, nada construído, incluindo a produção do
 
 ### O diferencial
 
-Os dois sinais cobrem o ponto cego um do outro:
+Cada sinal enxerga metade do problema:
 
-| Sinal | Dá | Não dá |
-|---|---|---|
-| Busca sem resultado | **volume** (onde olhar) | **verdade** (o produto *é* impermeável?) |
-| Texto de devolução | **verdade** (o atributo real) | **volume** (12 casos, com atraso) |
+**A busca mostra onde está o dinheiro, mas não mostra a verdade.** 340 pessoas
+procuraram "tênis impermeável" e não acharam — dá para saber que há venda parada e
+quanto vale. O que a busca não sabe é se o tênis é mesmo impermeável; isso ela só
+infere da descrição, escrita pelo marketing.
+
+**A devolução mostra a verdade, mas não mostra o tamanho.** Oito pessoas que
+compraram a capa escreveram que ela molha — fato, dito por quem usou. Mas são oito
+pessoas, com 30 dias de atraso, e nada disso indica onde procurar a próxima venda
+perdida.
+
+**Sozinho, cada sinal leva a uma decisão errada.** A busca sozinha manda marcar os
+dois produtos como impermeáveis, e um deles não é. A devolução sozinha nunca revela
+que há receita esperando ser recuperada.
 
 Juntar os dois cria uma capacidade que nenhum lado tem sozinho: **distinguir uma correção de uma mentira.**
 
