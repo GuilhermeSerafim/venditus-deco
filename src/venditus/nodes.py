@@ -153,7 +153,12 @@ def criar_guarda(llm) -> Node:
             decisao = DecisaoGuarda(
                 permitir=True, justificativa="Nenhuma escrita proposta.", devolucoes_contraditorias=0
             )
-            return {**state, "decisao_guarda": decisao, "status": "aprovado_pelo_guarda"}
+            return {
+                **state,
+                "decisao_guarda": decisao,
+                "devolucoes_consultadas": [],
+                "status": "aprovado_pelo_guarda",
+            }
 
         c = diagnostico.correcao
         devolucoes = devolucoes_do_sku(c.sku)
@@ -166,6 +171,15 @@ def criar_guarda(llm) -> Node:
             )
         )
         status = "aprovado_pelo_guarda" if decisao.permitir else "bloqueado_pelo_guarda"
-        return {**state, "decisao_guarda": decisao, "status": status}
+        # As devolucoes vao para o estado, nao para o DecisaoGuarda: aquele e o
+        # schema de saida do LLM, e faze-lo reescrever os textos seria gastar
+        # token para reproduzir dado que o no ja tem — e abrir espaco para o
+        # modelo parafrasear a frase do cliente.
+        return {
+            **state,
+            "decisao_guarda": decisao,
+            "devolucoes_consultadas": devolucoes,
+            "status": status,
+        }
 
     return guarda

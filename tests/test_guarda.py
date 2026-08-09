@@ -39,6 +39,30 @@ def test_prompt_do_guarda_inclui_as_devolucoes_do_sku_certo():
     assert "Cor diferente da foto" not in llm.prompt_recebido
 
 
+def test_bloqueio_carrega_os_textos_das_devolucoes():
+    # A tela de bloqueio precisa mostrar as FRASES do cliente, nao so o
+    # contador. Sem isso o climax do video vira uma afirmacao sem prova.
+    llm = FakeLLM(DecisaoGuarda(permitir=False, justificativa="x", devolucoes_contraditorias=8))
+    s = estado_inicial("capa de chuva impermeável", 128)
+    s["diagnostico"] = _diag("SKU-8802")
+    saida = criar_guarda(llm)(s)
+
+    consultadas = saida["devolucoes_consultadas"]
+    assert len(consultadas) == 11
+    motivos = [d.motivo for d in consultadas]
+    assert "Molhou tudo dentro da bolsa" in motivos
+    # So do SKU auditado.
+    assert all(d.sku == "SKU-8802" for d in consultadas)
+
+
+def test_sem_correcao_nao_carrega_devolucoes():
+    llm = FakeLLM(None)
+    s = estado_inicial("mochila cargueira 80 litros", 64)
+    s["diagnostico"] = Diagnostico(causa=Causa.SEM_SORTIMENTO, confianca="alta",
+                                   evidencia="não há item de 80L", correcao=None)
+    assert criar_guarda(llm)(s)["devolucoes_consultadas"] == []
+
+
 def test_sem_correcao_permite_sem_chamar_o_llm():
     llm = FakeLLM(None)
     s = estado_inicial("mochila cargueira 80 litros", 64)
