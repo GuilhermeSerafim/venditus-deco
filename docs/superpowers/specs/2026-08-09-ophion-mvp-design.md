@@ -36,9 +36,29 @@ Os dois sinais cobrem o ponto cego um do outro:
 
 Juntar os dois cria uma capacidade que nenhum lado tem sozinho: **distinguir uma correção de uma mentira.**
 
-Uma ferramenta de busca que "resolve" o zero-results marcando os tênis como impermeáveis melhora os próprios indicadores **e fabrica devolução** — dano que ela é estruturalmente incapaz de detectar, porque não lê pós-venda.
+### O exemplo que define o produto
 
-O OPHION lê os dois e **recusa** a escrita quando o pós-venda contradiz a proposta.
+Dois produtos na prateleira. A diferença entre eles é invisível no catálogo:
+
+- **`SKU-4471` — Tênis Trilha Alpha.** Tem membrana impermeável de verdade. Descrição: *"membrana impermeável que mantém os pés secos na trilha"*. Atributo `impermeavel` **vazio**.
+- **`SKU-8802` — Capa de Chuva Leve Nimbus.** Descrição: *"tecido leve com repelência à água para o dia a dia"*. Atributo `impermeavel` **vazio**. Na prática segura garoa e encharca em chuva forte.
+
+Sinal de entrada:
+
+```
+"tênis impermeável"          340 buscas/mês    0 resultados
+"capa de chuva impermeável"  128 buscas/mês    0 resultados
+```
+
+**Para o investigador os dois casos são idênticos:** produto existe, descrição menciona impermeabilidade, atributo faltando, busca falha. Mesmo diagnóstico, mesma proposta.
+
+**Caso 1 — escreve.** O guarda puxa as devoluções do SKU-4471: 3 em 90 dias, duas por tamanho e uma por cor. Nenhuma menciona água. → permitir. Aprovado, escrito, busca passa de 0 para 1 produto em estoque.
+
+**Caso 2 — recusa.** O guarda puxa as devoluções do SKU-8802: 11 em 90 dias, **8 falam de água** — *"chovi 10 minutos e encharquei"*, *"não é impermeável, é repelente"*. → bloquear. Nenhuma escrita acontece; vai para quarentena como hipótese de qualidade.
+
+**O que uma ferramenta de busca faz nos dois: exatamente a mesma coisa.** Ela aplica nos dois casos, porque a informação que a impediria de aplicar no segundo não existe no mundo dela. Trinta dias depois o zero-results caiu, o dashboard dela está verde, e as devoluções da capa subiram no P&L da logística — sem ninguém ligar uma coisa à outra.
+
+> **Os dois casos entram idênticos no sistema. Só um deveria sair escrito. A diferença só existe se você ler os dois lados.**
 
 ### Posicionamento competitivo
 
@@ -115,7 +135,8 @@ O `executor` grava um `fix_id` determinístico (hash de `sku + campo + valor`) e
 | Saída tipada | `with_structured_output()` + Pydantic | Terra suporta `structured_outputs` nativamente |
 | Catálogo | Shopify Admin GraphQL | via `httpx` |
 | Front | React + `useStream` | `@langchain/langgraph-sdk/react` — trata interrupts nativamente |
-| Arquitetura visível | LangGraph Studio | `langgraph dev` (app desktop macOS foi descontinuado) |
+| Arquitetura visível | **`draw_mermaid_png()`** — entregável comprometido | gera do grafo compilado; sem servidor, sem chave, sem internet |
+| Arquitetura visível (upgrade) | LangGraph Studio — **opcional** | `langgraph dev` → UI em `smith.langchain.com/studio/?baseUrl=http://127.0.0.1:2024`. Exige **chave do LangSmith**, internet e navegador Chromium. Suporte a Windows não é documentado explicitamente. O app desktop descontinuado era o de macOS — irrelevante aqui |
 
 ### Configuração do modelo
 
@@ -183,8 +204,9 @@ As duas últimas **não geram escrita** — sinalizam reposição e compras, res
 ## 6. Dados semeados
 
 - **Catálogo:** ~30 produtos, sendo 12 com "impermeável" apenas em texto livre.
-- **Log de busca:** termos com volume plausível, incluindo `tênis impermeável feminino` (340 buscas/mês).
-- **Armadilha do guarda:** 1 SKU "capa de chuva" que *tem* o atributo, com 8 textos de devolução dizendo "molhou", "não é impermeável de verdade".
+- **Log de busca:** termos com volume plausível, incluindo `tênis impermeável` (340 buscas/mês) e `capa de chuva impermeável` (128 buscas/mês), ambos com zero resultado.
+- **Armadilha do guarda:** `SKU-8802` (Capa de Chuva Leve Nimbus) — atributo `impermeavel` **vazio, igual ao tênis**, descrição mencionando "repelência à água", e **8 de 11 devoluções em 90 dias falando de água**. O diagnóstico do investigador tem que sair idêntico ao do caso legítimo; só o guarda separa os dois.
+- **Contraprova:** `SKU-4471` (Tênis Trilha Alpha) — 3 devoluções em 90 dias, nenhuma sobre água. É o caso que **deve** ser escrito.
 
 O dataset é sintético e isso é assumido abertamente no pitch.
 
@@ -264,11 +286,11 @@ Os dois de cima vendem para o lojista; os dois de baixo, para o jurado.
 
 Seis beats. Todo componente existe para servir um deles.
 
-1. **Painel.** Buscas sem resultado ordenadas por R$ perdido. `tênis impermeável feminino — 340 buscas — R$ 18.400 estimados`
-2. **Diagnóstico.** `Causa: atributo ausente. 12 produtos têm "impermeável" na descrição, nenhum tem o atributo estruturado.` Com evidência.
-3. **Aprovação.** Escreve o metafield. Diff visível.
-4. **Verificação.** `0 resultados → 12 produtos em estoque`. Contador de R$ sobe.
-5. **A virada.** Próximo item: `capa de chuva impermeável`. Mesmo diagnóstico — e o agente **para**: *"Bloqueado. 8 devoluções em 60 dias dizem 'molhou'. Aplicar aumentaria devolução. Encaminhado para qualidade."*
+1. **Painel.** Buscas sem resultado ordenadas por R$ perdido. `tênis impermeável — 340 buscas — R$ 3.842/mês estimados` (340 × 2% × R$ 564,96)
+2. **Diagnóstico.** `Causa: atributo ausente. SKU-4471 tem "membrana impermeável" na descrição e o atributo estruturado vazio.` Com o trecho como evidência.
+3. **Aprovação.** Escreve o metafield. Diff visível no admin.
+4. **Verificação.** `0 resultados → 1 produto em estoque`. Contador de R$ sobe.
+5. **A virada.** Próximo item: `capa de chuva impermeável — 128 buscas — R$ 1.446/mês`. **Diagnóstico idêntico** — mesmo tipo de causa, mesma proposta. E o agente **para**: *"Bloqueado. 8 de 11 devoluções em 90 dias dizem que molha. Aplicar aumentaria devolução. Encaminhado para qualidade."*
 6. **Fecho.** *"A ferramenta de busca teria aplicado. Ela não olha devolução."*
 
 O beat 5 é o pitch. Os outros cinco dão contexto a ele.
@@ -306,11 +328,11 @@ Sem folga para retrabalho.
 
 ## 13. Verificação end-to-end
 
-1. `langgraph dev` sobe e o Studio renderiza o grafo com as duas arestas condicionais.
-2. Disparar o fluxo pela query `tênis impermeável feminino`: o grafo pausa no `interrupt()`.
+1. `draw_mermaid_png()` gera o diagrama com as duas arestas condicionais. (Se o Studio subir, conferir que renderiza o mesmo grafo — mas o diagrama estático é o entregável.)
+2. Disparar o fluxo pela query `tênis impermeável`: o grafo pausa no `interrupt()`.
 3. Aprovar: o metafield aparece no admin da Shopify.
 4. Re-executar a busca: retorna ≥1 produto em estoque.
-5. Disparar por `capa de chuva impermeável`: o grafo desvia para `quarentena` e **não escreve**.
+5. Disparar por `capa de chuva impermeável`: o investigador produz o **mesmo diagnóstico**, e o grafo desvia para `quarentena` sem escrever.
 6. Rodar o passo 3 duas vezes: sem escrita duplicada, sem inflar o contador.
 7. Rodar a suíte do classificador: acurácia registrada.
 
