@@ -94,7 +94,7 @@ graph TD
     verificador --> FIM2([fim])
 ```
 
-Seis nós, **dois com LLM** (`investigador` e `guarda`). Os outros quatro são determinísticos.
+Sete nós, **dois com LLM** (`investigador` e `guarda`). Os outros cinco são determinísticos.
 
 **A aresta `guarda → quarentena` é o produto.** Quando o pós-venda contradiz a correção proposta, o caminho até a escrita simplesmente **não existe** — não é uma sugestão ao modelo, é topologia do grafo.
 
@@ -130,16 +130,26 @@ A **taxa de bloqueio** é a única métrica que nenhum concorrente consegue calc
 ## 🚀 Rodando
 
 ```bash
+cd back
 python -m venv .venv
 .venv\Scripts\pip install -e ".[dev]"
+.venv\Scripts\python -c "import venditus"   # tem que passar sem erro
 .venv\Scripts\pytest -v
 ```
 
 > ⚠️ Use `python`, não `py` — o launcher aponta para 3.14, que ainda não tem wheel para várias dependências.
+>
+> ⚠️ Se `import venditus` falhar, a instalação editável quebrou em silêncio (o `pytest` continua passando e todo o resto falha). Rode `.venv\Scripts\pip install -e . --force-reinstall --no-deps`.
 
 **Toda a suíte roda sem chave de API e sem internet.** O catálogo e o LLM têm dublês.
 
-Para rodar de verdade, crie um `.env`:
+Servidor do grafo, com Swagger em `/docs` e visualização dos nós no LangGraph Studio:
+
+```bash
+.venv\Scripts\langgraph dev
+```
+
+Para rodar de verdade, crie um `back/.env`:
 
 ```env
 OPENAI_API_KEY=sk-...
@@ -161,19 +171,26 @@ Gerar o diagrama da arquitetura:
 ## 🗂️ Estrutura
 
 ```
-src/venditus/
-  models.py          # 🧾 as seis causas, diagnóstico, decisão do guarda
-  estimate.py        # 💰 estimativa de perda em R$
-  fixid.py           # 🔒 identificador determinístico (idempotência)
-  metrics.py         # 📊 KPIs agregados
-  state.py           # 🧬 estado que percorre o grafo
-  nodes.py           # ⚙️ os seis nós
-  graph.py           # 🕸️ montagem do StateGraph
-  seed.py            # 🌱 catálogo e devoluções do demo
-  adapters/
-    base.py          # 🔌 protocolo CatalogAdapter
-    fake.py          # 🧪 catálogo em memória
-    shopify.py       # 🛒 Shopify Admin GraphQL
+back/                # 🐍 o agente
+  src/venditus/
+    models.py        # 🧾 as seis causas, diagnóstico, decisão do guarda
+    estimate.py      # 💰 estimativa de perda em R$
+    fixid.py         # 🔒 identificador determinístico (idempotência)
+    metrics.py       # 📊 KPIs agregados
+    state.py         # 🧬 estado que percorre o grafo
+    nodes.py         # ⚙️ os sete nós
+    graph.py         # 🕸️ montagem do StateGraph
+    seed.py          # 🌱 catálogo e devoluções do demo
+    avaliacao.py     # 🎯 conjunto rotulado para medir o classificador
+    adapters/
+      base.py        # 🔌 protocolo CatalogAdapter
+      fake.py        # 🧪 catálogo em memória
+      shopify.py     # 🛒 Shopify Admin GraphQL
+  scripts/           # 🧰 demo, seed, verificação, diagrama, avaliação
+  tests/             # ✅ 78 testes, sem rede
+front/               # ⚛️ a interface (próxima rodada)
+  HANDOFF.md         # 📋 tudo que o dev de front precisa saber
+docs/                # 📚 spec, plano e diagrama
 ```
 
 A lógica de domínio **não conhece HTTP nem Shopify**. Trocar por VTEX é implementar o protocolo `CatalogAdapter` — nenhum nó muda.
@@ -199,6 +216,7 @@ A lógica de domínio **não conhece HTTP nem Shopify**. Trocar por VTEX é impl
 | 📐 [Design](docs/superpowers/specs/2026-08-09-venditus-mvp-design.md) | o quê, por quê, escopo, riscos |
 | 🗺️ [Plano de implementação](docs/superpowers/plans/2026-08-09-venditus-backend.md) | 15 tarefas em TDD |
 | 🤖 [AGENTS.md](AGENTS.md) | decisões inegociáveis para agentes |
+| 📋 [front/HANDOFF.md](front/HANDOFF.md) | contrato, paleta e telas para quem faz o front |
 
 ---
 
