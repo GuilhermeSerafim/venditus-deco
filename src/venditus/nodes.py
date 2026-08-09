@@ -90,6 +90,10 @@ Regras:
 - "sem_estoque": o produto existe mas está zerado. NÃO proponha correção.
 - "sem_sortimento": a loja não vende esse produto. NÃO proponha correção.
 
+Para atributos binários (impermeável, sem glúten, bivolt), grave exatamente
+valor="true". A busca da loja só reconhece o atributo como preenchido nesse
+formato — uma frase descritiva no lugar do valor deixa o produto invisível.
+
 Cite na evidência o trecho literal do catálogo que sustenta seu diagnóstico."""
 
 
