@@ -1,0 +1,28 @@
+---
+config:
+  flowchart:
+    curve: linear
+---
+graph TD;
+	__start__([<p>__start__</p>]):::first
+	ingest(ingest)
+	investigador(investigador)
+	guarda(guarda)
+	quarentena(quarentena)
+	aprovacao(aprovacao)
+	executor(executor)
+	verificador(verificador)
+	__end__([<p>__end__</p>]):::last
+	__start__ --> ingest;
+	aprovacao -. &nbsp;fim&nbsp; .-> __end__;
+	aprovacao -.-> executor;
+	executor --> verificador;
+	guarda -.-> aprovacao;
+	guarda -.-> quarentena;
+	ingest --> investigador;
+	investigador --> guarda;
+	quarentena --> __end__;
+	verificador --> __end__;
+	classDef default fill:#f2f0ff,line-height:1.2
+	classDef first fill-opacity:0
+	classDef last fill:#bfb6fc
