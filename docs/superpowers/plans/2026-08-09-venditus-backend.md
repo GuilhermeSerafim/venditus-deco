@@ -87,12 +87,34 @@ SHOPIFY_ADMIN_TOKEN=shpat_...
 SHOPIFY_API_VERSION=2026-07
 ```
 
-- [ ] **Step 3: Instalar**
+- [ ] **Step 3: Criar o esqueleto do pacote ANTES de instalar**
+
+```bash
+mkdir -p src/venditus && touch src/venditus/__init__.py
+```
+
+**Isto não é cosmético.** O hatchling resolve `packages = ["src/venditus"]` no momento da
+instalação. Se o diretório não existir ainda, ele produz uma instalação editável **vazia,
+sem reclamar**: o `pip show` diz que instalou, o `dist-info` existe, e não há nenhum `.pth`
+apontando para `src/`. O sintoma aparece longe daqui — `import venditus` funciona sob
+`pytest` (que injeta `pythonpath`) e falha em qualquer outro contexto, incluindo o servidor
+`langgraph dev`.
+
+- [ ] **Step 4: Instalar**
 
 Run: `python -m venv .venv && .venv\Scripts\pip install -e ".[dev]"`
 Expected: instalação conclui sem conflito de resolução.
 
-- [ ] **Step 4: Criar `scripts/smoke_api.py`**
+- [ ] **Step 5: Confirmar que a instalação editável funcionou**
+
+Run: `.venv\Scripts\python -c "import venditus; print(venditus.__file__)"`
+Expected: caminho dentro de `src/venditus/`. **Não passe `PYTHONPATH`** — o objetivo é
+justamente provar que não precisa dele.
+
+Se falhar com `ModuleNotFoundError`, rode `.venv\Scripts\pip install -e . --force-reinstall
+--no-deps` e confirme que surgiu um `_editable_impl_venditus.pth` em `site-packages`.
+
+- [ ] **Step 6: Criar `scripts/smoke_api.py`**
 
 ```python
 """Confirma a superfície de API do LangGraph instalada antes de construir em cima."""
@@ -116,14 +138,14 @@ assert "reasoning_effort" in ChatOpenAI.model_fields, \
 print("reasoning_effort: OK")
 ```
 
-- [ ] **Step 5: Rodar o smoke**
+- [ ] **Step 7: Rodar o smoke**
 
 Run: `.venv\Scripts\python scripts\smoke_api.py`
 Expected: imprime as versões e `reasoning_effort: OK`, sem exceção.
 
 Se algum import falhar, **pare e ajuste os imports em todo o plano antes de continuar.** Os caminhos alternativos conhecidos: `from langgraph.checkpoint.sqlite import SqliteSaver` pode ser `from langgraph.checkpoint.sqlite import SqliteSaver` em pacote separado (já pinado acima); `interrupt` e `Command` podem estar em `langgraph.types` ou `langgraph.constants` conforme a versão.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 8: Commit**
 
 ```bash
 git add pyproject.toml .env.example scripts/smoke_api.py
@@ -619,7 +641,7 @@ class FakeCatalogAdapter:
 Run: `.venv\Scripts\pytest tests/test_fake_adapter.py -v`
 Expected: PASS — 7 passed
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 8: Commit**
 
 ```bash
 git add src/venditus/adapters tests/test_fake_adapter.py
@@ -1175,7 +1197,7 @@ def criar_investigador(llm, catalogo: CatalogAdapter) -> Node:
 Run: `.venv\Scripts\pytest tests/test_investigador.py -v`
 Expected: PASS — 2 passed
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 8: Commit**
 
 ```bash
 git add src/venditus/nodes.py tests/__init__.py tests/fakes.py tests/test_investigador.py
@@ -1497,7 +1519,7 @@ Se `test_caminho_feliz_pausa_no_interrupt` falhar com o grafo já concluído, a 
 Run: `.venv\Scripts\pytest -v`
 Expected: PASS — todos os testes
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 8: Commit**
 
 ```bash
 git add src/venditus/graph.py tests/test_graph.py
