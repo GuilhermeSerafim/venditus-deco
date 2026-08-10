@@ -129,42 +129,190 @@ A **taxa de bloqueio** é a única métrica que nenhum concorrente consegue calc
 
 ## 🚀 Rodando
 
-```bash
+**Requisitos:** Python **3.12** · Node **22+**
+
+> ⚠️ Use `python`, não `py` — o launcher aponta para 3.14, que ainda não tem
+> wheel para várias dependências e te joga numa compilação de C sem motivo.
+
+Há três níveis, do mais barato ao mais completo. **O nível 2 já roda a demo
+inteira** — Shopify é opcional.
+
+---
+
+### Nível 0 — os testes · nenhuma chave, nenhuma internet
+
+```powershell
 cd back
 python -m venv .venv
-.venv\Scripts\pip install -e ".[dev]"
-.venv\Scripts\python -c "import venditus"   # tem que passar sem erro
-.venv\Scripts\pytest -v
+.\.venv\Scripts\pip.exe install -e ".[dev]"
+.\.venv\Scripts\python.exe -c "import venditus"   # tem que passar sem erro
+.\.venv\Scripts\pytest.exe -v
 ```
 
-> ⚠️ Use `python`, não `py` — o launcher aponta para 3.14, que ainda não tem wheel para várias dependências.
->
-> ⚠️ Se `import venditus` falhar, a instalação editável quebrou em silêncio (o `pytest` continua passando e todo o resto falha). Rode `.venv\Scripts\pip install -e . --force-reinstall --no-deps`.
-
-**Toda a suíte roda sem chave de API e sem internet.** O catálogo e o LLM têm dublês.
-
-Servidor do grafo, com Swagger em `/docs` e visualização dos nós no LangGraph Studio:
+<details>
+<summary>macOS / Linux</summary>
 
 ```bash
-.venv\Scripts\langgraph dev
+cd back
+python3 -m venv .venv
+./.venv/bin/pip install -e ".[dev]"
+./.venv/bin/python -c "import venditus"
+./.venv/bin/pytest -v
+```
+</details>
+
+**78 testes, sem rede e sem chave de API.** O catálogo e o LLM têm dublês.
+
+Os dois que provam a tese, se quiser ir direto ao ponto:
+
+```powershell
+.\.venv\Scripts\pytest.exe -v -k "caminho_bloqueado or idempotente"
 ```
 
-Para rodar de verdade, crie um `back/.env`:
+| teste | o que prova |
+|---|---|
+| `test_caminho_bloqueado_nao_escreve` | o guarda impede a escrita quando o pós-venda contradiz |
+| `test_executor_e_idempotente` | retomar a aprovação não duplica a escrita |
+
+> ⚠️ Se `import venditus` falhar com `ModuleNotFoundError`, a instalação
+> editável quebrou em silêncio. Rode
+> `.\.venv\Scripts\pip.exe install -e . --force-reinstall --no-deps` e confirme
+> que surgiu `_editable_impl_venditus.pth` em `.venv/Lib/site-packages`.
+> O sintoma engana: o `pytest` continua passando e todo o resto falha.
+
+---
+
+### Nível 1 — a demo pelo terminal · só a chave da OpenAI
+
+Crie `back/.env`:
 
 ```env
 OPENAI_API_KEY=sk-...
-
-# Opcionais — sem eles o projeto usa o catálogo em memória
-SHOPIFY_STORE_DOMAIN=sua-loja.myshopify.com
-SHOPIFY_ADMIN_TOKEN=shpat_...
-SHOPIFY_API_VERSION=...
 ```
 
-Gerar o diagrama da arquitetura:
+**Sem credenciais da Shopify o projeto usa o catálogo em memória
+automaticamente** — e ele já contém os dois produtos do caso. Não precisa de
+loja nenhuma.
+
+```powershell
+cd back
+.\.venv\Scripts\python.exe scripts\rodar_demo.py
+```
+
+Roda os dois casos ponta a ponta e imprime o veredito. Custa centavos.
+
+---
+
+### Nível 2 — a interface · a demo completa
+
+**Terminal 1 — backend:**
+
+```powershell
+cd back
+.\.venv\Scripts\langgraph.exe dev --no-browser --port 2024
+```
+
+**Terminal 2 — front:**
+
+```powershell
+cd front
+npm install
+npm run dev
+```
+
+Abra **`http://localhost:5173`**. É a única URL que você abre — o front fala
+com o backend por um proxy, então não há CORS para configurar.
+
+<details>
+<summary>macOS / Linux — backend</summary>
 
 ```bash
-.venv\Scripts\python scripts\gerar_diagrama.py
+cd back
+./.venv/bin/langgraph dev --no-browser --port 2024
 ```
+</details>
+
+> ⚠️ Chame sempre o `langgraph` **de dentro do venv**. Se houver um `langgraph`
+> global no PATH, o servidor sobe no Python errado, responde `200` em `/ok`, e
+> só quebra quando um run executa — com um `ModuleNotFoundError` que não diz
+> qual módulo.
+
+#### O que clicar
+
+| # | ação | o que deve acontecer |
+|---|---|---|
+| 1 | **tênis impermeável** → *Aprovar* | os seis passos acendem; a busca vai de **0 → 1** |
+| 2 | **capa de chuva impermeável** | o passo *"Audita as devoluções"* fica **vermelho** e os seguintes são riscados; aparecem **as 11 devoluções** que o guarda leu |
+| 3 | olhe os indicadores no topo | **1 de 2 correções recusadas** |
+
+Cada caso leva de 40 a 90 segundos — são dois nós de LLM com raciocínio, e o
+contador de segundos na tela mostra o tempo correndo.
+
+#### Testes do front
+
+```powershell
+cd front
+npm test        # 30 testes, funções puras
+```
+
+---
+
+### Nível 3 — contra uma loja Shopify real *(opcional)*
+
+Acrescente ao `back/.env`:
+
+```env
+SHOPIFY_STORE_DOMAIN=sua-loja.myshopify.com
+SHOPIFY_ADMIN_TOKEN=shpat_...
+SHOPIFY_API_VERSION=2026-07
+```
+
+```powershell
+.\.venv\Scripts\python.exe scripts\semear_shopify.py      # cria os produtos
+.\.venv\Scripts\python.exe scripts\verificar_shopify.py   # prova o ciclo
+```
+
+Entre uma execução e outra, devolva o SKU-4471 ao estado "antes" **e reinicie o
+servidor** — o adapter guarda em memória as correções já aplicadas:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\verificar_shopify.py --resetar
+```
+
+---
+
+### Outros comandos
+
+| | |
+|---|---|
+| `python scripts/avaliar_classificador.py` | mede a acurácia do classificador (20/20 hoje) |
+| `python scripts/gerar_diagrama.py` | regenera o diagrama da arquitetura |
+| `node front/scripts/sonda-sdk.mjs` | confere o contrato do SDK contra o backend, sem navegador |
+
+---
+
+## ⚖️ O que é real e o que é sintético
+
+Distinção que sustentamos em todo lugar:
+
+| real | sintético |
+|---|---|
+| o grafo, os dois nós de LLM e o raciocínio | o corpus de buscas sem resultado (`seed.py`) |
+| a escrita no catálogo, idempotente | o corpus de devoluções (`seed.py`) |
+| a medição antes/depois da busca | a estimativa em R$ (premissas declaradas) |
+| a decisão de recusa | — |
+
+**Não há integração com analytics nem com pós-venda.** O conector é trabalho de
+encanamento; o que foi construído aqui é o motor que decide quando *não*
+escrever.
+
+### Limitação conhecida
+
+O guarda só protege produto que **já teve devolução**. Para um item sem
+histórico, o segundo sinal não existe e o veto não tem com o que trabalhar —
+o terceiro termo da fila (`mochila cargueira 80 litros`) demonstra isso: a loja
+não vende 80 litros, a causa correta seria sortimento, e o investigador
+diagnostica errado sem que nada possa barrá-lo.
 
 ---
 
