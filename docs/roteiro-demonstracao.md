@@ -248,7 +248,20 @@ Como é gravado, quase tudo se resolve regravando. Refaça o preparo (zerar loja
 
 ### "Por que 2% de conversão?"
 > Premissa conservadora, e está declarada na tela. *(aponte a fórmula no rodapé
-> da lista)*
+> da lista)* É o elo mais fraco da conta — o ticket tem fonte, a conversão é
+> escolha nossa.
+
+### "Esse ticket médio não vale para essa loja"
+> Provavelmente não, e **não muda o argumento**. No ponto de equilíbrio o
+> ticket aparece dos dois lados da divisão e cancela:
+>
+> ```
+> devoluções que anulam o ganho = (volume × 2% × ticket) ÷ (ticket × 1,30)
+>                               =  volume × 2% ÷ 1,30
+> ```
+>
+> O ticket só serve para dar tamanho ao R$ na tela. As "cerca de duas
+> devoluções por mês" dependem só do volume de busca, da conversão e dos 30%.
 
 ---
 
@@ -266,6 +279,14 @@ perda estimada = volume × 2% × R$ 564,96      (ticket médio, ABComm 2026)
 custo de uma devolução  = R$ 564,96 × 1,30  =  R$ 734,45
 ponto de equilíbrio     = 1.446,30 ÷ 734,45 ≈  2 devoluções/mês
 a capa já tem           = 8 em 90 dias      ≈  2,7 por mês
+```
+
+**O ticket cancela no ponto de equilíbrio** — vale saber, é o que blinda a
+conta contra "esse ticket não vale para essa loja":
+
+```
+(volume × 2% × ticket) ÷ (ticket × 1,30)  =  volume × 2% ÷ 1,30
+                                          =  128 × 0,02 ÷ 1,30  ≈  2
 ```
 
 > Diga **"cerca de duas devoluções por mês"**, não o decimal. Igualmente fatal
