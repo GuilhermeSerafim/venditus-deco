@@ -28,8 +28,13 @@ export function BlocoDaCorrecao({
       <p className="text-[15px] font-semibold leading-snug">
         {fraseDaCorrecao(correcao, termo)}
       </p>
-      <p className="mt-1.5 font-mono text-[10.5px] text-[#6B6B6B]">
-        atributo {correcao.campo} = &quot;{correcao.valor}&quot; · {correcao.sku}
+      {/* A linha de baixo diz ONDE a escrita cai, nao o que ela vale — o
+          valor ja esta na frase de cima ("como impermeavel", "como 80"), e
+          repeti-lo como `= "true"` so trazia sintaxe de codigo para uma tela
+          que um lojista le. */}
+      <p className="mt-1.5 text-[10.5px] text-[#6B6B6B]">
+        no produto <span className="text-[#8A8A8A]">{correcao.sku}</span> · campo{" "}
+        <span className="font-mono text-[#8A8A8A]">{correcao.campo}</span>
         {destino ? ` · ${destino}` : ""}
       </p>
     </div>

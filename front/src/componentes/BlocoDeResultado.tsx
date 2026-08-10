@@ -17,6 +17,32 @@ export function BlocoDeResultado({ estado }: { estado: EstadoVenditus }) {
     );
   }
 
+  /* Escrita registrada e busca inalterada nao e sucesso — e anomalia.
+     Anunciar "achava 0, agora acha 0" em corpo 20 parece defeito do produto,
+     quando o que houve foi a escrita ser pulada (o executor considera a
+     correcao ja aplicada) ou a alteracao ainda nao ter propagado. */
+  if (estado.resultados_depois <= estado.resultados_antes) {
+    return (
+      <section className="rounded-lg border border-aviso bg-[#1F1A0A] p-3.5">
+        <p className="text-[15px] font-semibold text-aviso">
+          A correção foi registrada, mas a busca não mudou.
+        </p>
+        <p className="mt-1 text-[11.5px] leading-relaxed text-texto-fraco">
+          Continua com{" "}
+          <strong className="text-texto">
+            {estado.resultados_depois}{" "}
+            {estado.resultados_depois === 1 ? "resultado" : "resultados"}
+          </strong>
+          . O atributo já constava no catálogo, ou a alteração ainda não
+          propagou na loja.
+        </p>
+        <p className="mt-2 font-mono text-[10.5px] text-[#6B6B6B]">
+          fix_id {estado.fix_id}
+        </p>
+      </section>
+    );
+  }
+
   return (
     <section className="rounded-lg border border-gold-escuro bg-cartao p-3.5">
       <p className="text-xl font-bold">

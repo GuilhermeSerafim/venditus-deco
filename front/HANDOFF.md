@@ -103,7 +103,25 @@ cd back
 A saída confirma o estado de partida:
 `busca por 'tênis impermeável' agora: 0 resultado(s)`
 
-**2. A tela** — abra `http://localhost:5173/?limpar`
+**2. O servidor** — **obrigatório sempre que o passo 1 rodar.** Pare o
+`langgraph dev` (`Ctrl+C`) e suba de novo.
+
+O adapter guarda os `fix_id` já aplicados num `set` **em memória**
+(`adapters/shopify.py:79`), e o servidor cria um adapter só, no import. O
+script de reset roda em outro processo e apaga o metafield da Shopify, mas
+não toca nessa memória. Sem reiniciar:
+
+```
+executor  → correcao_ja_aplicada(fix_id) = True → PULA a escrita
+          → devolve escreveu: true assim mesmo
+verificador → consulta a loja → o atributo não está lá → 0 resultados
+```
+
+O sintoma é **"A busca achava 0. Agora acha 0."** com `escreveu: true`. A
+interface detecta isso e mostra um aviso âmbar em vez do número de sucesso,
+mas a causa é esta e o conserto é reiniciar.
+
+**3. A tela** — abra `http://localhost:5173/?limpar`
 
 O `?limpar` some da barra de endereço sozinho depois de agir, para um F5
 acidental não zerar tudo no meio da apresentação.
