@@ -1,0 +1,44 @@
+@import "tailwindcss";
+
+/* Tokens do HANDOFF §5. Um unico token de gold, definido uma vez. */
+@theme {
+  --color-fundo: #0d0d0d;
+  --color-sutil: #121212;
+  --color-cartao: #141414;
+  --color-secundario: #1f1f1f;
+  --color-borda: #262626;
+  --color-texto: #ffffff;
+  --color-texto-fraco: #a6a6a6;
+
+  --color-gold: hsl(43 74% 49%);
+  --color-gold-claro: hsl(45 80% 58%);
+  --color-gold-escuro: hsl(40 85% 45%);
+  --color-gold-fraco: hsl(43 40% 35%);
+
+  --color-sucesso: hsl(142 71% 45%);
+  --color-aviso: hsl(38 92% 50%);
+  --color-perigo: hsl(0 84% 60%);
+
+  --radius-vd: 0.625rem;
+  --font-titulo: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-corpo: Inter, ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Tema light do HANDOFF §5 — NAO ENTREGUE nesta rodada (decisao D6 do spec).
+   Motivo: #D9A520 sobre #FFFFFF da 2,2:1, reprova em WCAG AA (4,5:1) e no piso
+   de 3:1 para elemento grafico. No light o gold so pode ser preenchimento com
+   texto preto (--primary-foreground 0 0% 9%) ou borda, nunca cor de texto.
+   Valores preservados para a proxima rodada:
+     background #FFFFFF · subtle #FAFAFA · card #FFFFFF
+     secondary/muted/accent #F5F5F5 · border/input #E5E5E5
+     muted-foreground #737373 · foreground #171717
+     sidebar-hover #F7F4ED · gold-dark 38 80% 42% · gold-muted 43 30% 70% */
+
+body {
+  background: var(--color-fundo);
+  color: var(--color-texto);
+  font-family: var(--font-corpo);
+  font-feature-settings: "tnum" 1;
+}
+
+h1, h2, h3 { font-family: var(--font-titulo); }
