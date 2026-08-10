@@ -1,9 +1,15 @@
 import { useEffect, useState } from "react";
 
-const COMANDO = "cd back && .venv\\Scripts\\langgraph dev --no-browser --port 2024";
-const RESET = "cd back && .venv\\Scripts\\python scripts/verificar_shopify.py --resetar";
+const COMANDO = ".\\.venv\\Scripts\\langgraph.exe dev --no-browser --port 2024";
 
-export function AvisoDeBackend({ jaCorrigido }: { jaCorrigido: boolean }) {
+/** Faixa de indisponibilidade do servico.
+ *
+ * Trata SO falha de infraestrutura — nao "catalogo ja corrigido", que e
+ * operacao normal e mora inline, junto da execucao. Misturar as duas fazia a
+ * faixa aparecer depois de um "Rejeitar" bem-sucedido, sem relacao nenhuma
+ * com o que o usuario acabara de fazer.
+ */
+export function AvisoDeBackend() {
   const [noAr, setNoAr] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -24,23 +30,13 @@ export function AvisoDeBackend({ jaCorrigido }: { jaCorrigido: boolean }) {
     return (
       <div role="alert" className="border-b border-perigo bg-[#1E0E0E] px-5 py-2">
         <p className="text-xs font-semibold text-[#FF6B6B]">
-          O backend não responde em 127.0.0.1:2024.
+          Não foi possível falar com o serviço do Venditus.
         </p>
+        {/* O comando fica porque, quando esta faixa aparece, quem esta na
+            frente da tela e quem opera a demo — e nao ha nada a fazer pela
+            interface. Some assim que o servico responde. */}
         <code className="mt-1 block font-mono text-[10.5px] text-texto-fraco">
           {COMANDO}
-        </code>
-      </div>
-    );
-  }
-
-  if (jaCorrigido) {
-    return (
-      <div role="status" className="border-b border-gold-escuro bg-[#17130A] px-5 py-2">
-        <p className="text-xs font-semibold text-gold-claro">
-          Esta correção já está aplicada na loja — a busca já achava o produto antes de rodar.
-        </p>
-        <code className="mt-1 block font-mono text-[10.5px] text-texto-fraco">
-          {RESET}
         </code>
       </div>
     );

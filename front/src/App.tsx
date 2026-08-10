@@ -13,6 +13,7 @@ import { EstadoVazio } from "./componentes/EstadoVazio";
 import { FaixaDeIndicadores } from "./componentes/FaixaDeIndicadores";
 import { LinhaDoTempo } from "./componentes/LinhaDoTempo";
 import { ListaDeBuscas } from "./componentes/ListaDeBuscas";
+import { NotaDeCatalogo } from "./componentes/NotaDeCatalogo";
 
 const CHAVE_GUARDADAS = "venditus:execucoes";
 
@@ -93,9 +94,7 @@ export default function App() {
         <FaixaDeIndicadores dados={dados} />
       </Cabecalho>
 
-      <AvisoDeBackend
-        jaCorrigido={Object.values(encerradas).some((e) => e.resultados_antes > 0)}
-      />
+      <AvisoDeBackend />
 
       <div className="flex min-w-[960px]">
         <ListaDeBuscas
@@ -121,6 +120,10 @@ export default function App() {
               ) : null}
 
               <LinhaDoTempo status={estado?.status} segundos={execucao.segundos} />
+
+              {estado ? (
+                <NotaDeCatalogo resultadosAntes={estado.resultados_antes} />
+              ) : null}
 
               {estado?.diagnostico ? (
                 <CartaoDeDiagnostico
