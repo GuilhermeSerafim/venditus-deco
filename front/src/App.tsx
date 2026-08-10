@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { EstadoVenditus } from "./dados/contrato";
 import { STATUS_TERMINAIS } from "./dados/contrato";
 import { usarExecucao } from "./ganchos/usarExecucao";
@@ -14,13 +14,50 @@ import { FaixaDeIndicadores } from "./componentes/FaixaDeIndicadores";
 import { LinhaDoTempo } from "./componentes/LinhaDoTempo";
 import { ListaDeBuscas } from "./componentes/ListaDeBuscas";
 
+const CHAVE_GUARDADAS = "venditus:execucoes";
+
+/** As execucoes terminadas que sobreviveram a uma recarga.
+ *
+ * Sem isto, um F5 durante o pitch e fatal: a tela esquece as execucoes, mas a
+ * loja NAO esquece a escrita. O tenis continua corrigido na Shopify, entao
+ * clicar nele de novo mostra "1 -> 1" em vez de "0 -> 1", e recuperar o quadro
+ * exigiria rodar o script de reset no terminal e refazer a execucao inteira.
+ *
+ * `?limpar` na URL comeca do zero, para ensaiar de novo sem fechar a aba.
+ */
+function lerGuardadas(): Record<string, EstadoVenditus> {
+  if (typeof window === "undefined") return {};
+  if (window.location.search.includes("limpar")) {
+    window.sessionStorage.removeItem(CHAVE_GUARDADAS);
+    return {};
+  }
+  try {
+    const bruto = window.sessionStorage.getItem(CHAVE_GUARDADAS);
+    return bruto ? (JSON.parse(bruto) as Record<string, EstadoVenditus>) : {};
+  } catch {
+    return {};
+  }
+}
+
 export default function App() {
   /** As execucoes que chegaram ao fim, indexadas pelo termo.
    *
    * Rodar o mesmo termo de novo substitui o resultado anterior, em vez de
    * empilhar — senao os indicadores contariam a mesma busca duas vezes.
    */
-  const [encerradas, setEncerradas] = useState<Record<string, EstadoVenditus>>({});
+  const [encerradas, setEncerradas] =
+    useState<Record<string, EstadoVenditus>>(lerGuardadas);
+
+  // sessionStorage e nao localStorage de proposito: sobrevive ao F5, e some
+  // quando a aba fecha. Entre um ensaio e outro voce nao herda estado velho.
+  useEffect(() => {
+    try {
+      window.sessionStorage.setItem(CHAVE_GUARDADAS, JSON.stringify(encerradas));
+    } catch {
+      // Cota estourada ou modo privado. Perder o historico e aceitavel;
+      // derrubar a tela no meio do pitch nao e.
+    }
+  }, [encerradas]);
 
   const aoEncerrar = useCallback((estado: EstadoVenditus) => {
     setEncerradas((atuais) => ({ ...atuais, [estado.termo]: estado }));
