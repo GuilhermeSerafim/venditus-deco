@@ -52,6 +52,7 @@ Abra: `http://localhost:5173/?limpar`
 | indicadores | `—` · `—` · `—` |
 | faixas de erro | nenhuma |
 | janela | maximizada, ≥1024px de largura |
+| **o diagrama** | `docs/arquitetura/grafo.png` aberto numa aba, pronto para o corte |
 
 ---
 
@@ -115,36 +116,44 @@ Alvo: os três casos cabem em **~90 segundos** de vídeo.
 > "Esse a gente já corrigiu. A descrição dizia 'membrana impermeável', mas o
 > atributo estava vazio — e a busca da loja não lê descrição. Zero para um."
 
-### 0:24 – 0:30 · clica na capa de chuva
+### 0:24 – 0:32 · clica na capa de chuva
 
 🗣 **Fala:**
 
-> "Agora a capa de chuva. **Diagnóstico idêntico.** Mesmo atributo faltando,
-> mesma proposta de escrita."
+> "Agora a capa de chuva. **Diagnóstico idêntico** — mesmo atributo faltando,
+> mesma proposta de escrita.
+>
+> Uma ferramenta de busca aplicaria nos dois. Ela vê volume e vê o texto da
+> descrição, e a informação que a impediria de aplicar no segundo **não existe
+> no mundo dela.**"
 
-### 0:30 – 1:10 · a espera vira argumento
+### 0:32 – 1:10 · 🏗️ a arquitetura *(a espera vira o momento técnico)*
 
-🎬 **Tela:** os passos acendendo, segundos correndo
+🎬 **Tela: CORTE PARA O DIAGRAMA** → `docs/arquitetura/grafo.png`
 
-> São 15 a 40 segundos de LLM. **Diga o núcleo primeiro.** Se sobrar tempo,
-> acrescente. Se terminar antes, para.
+> É aqui que o vídeo mostra o agente. Enquanto o LLM pensa, você não está
+> esperando — está explicando. Volte para a interface quando a recusa aparecer.
 
-🗣 **NÚCLEO — diga sempre:**
+🗣 **Fala:**
 
-> "Uma ferramenta de busca aplicaria nos dois. Ela vê volume e vê o texto da
-> descrição — e a informação que a impediria de aplicar no segundo simplesmente
-> não existe no mundo dela."
+> "Enquanto ele pensa, olha a arquitetura.
+>
+> São **sete nós num grafo LangGraph** — e **só dois têm LLM**: o investigador,
+> que diagnostica a causa, e o guarda, que audita o pós-venda. Os outros cinco
+> são determinísticos. A gente não põe modelo onde não precisa de modelo.
+>
+> Repara nessa bifurcação depois do guarda **(aponte)**. Ela é o produto. Quando
+> o pós-venda contradiz, o fluxo desvia para quarentena — e **o caminho até o nó
+> de escrita simplesmente não existe.** Não é uma instrução no prompt que o
+> modelo pode ignorar. É topologia do grafo.
+>
+> E entre o guarda e a escrita tem uma pausa: **aprovação humana.** A escrita
+> mora num nó posterior a ela, e é idempotente — porque retomar uma pausa
+> re-executa o nó inteiro."
 
-🗣 **Se sobrar tempo, acrescente nesta ordem:**
-
-1. > "O Venditus tem um segundo nó. Antes de escrever, ele lê as devoluções
-   > daquele produto."
-
-2. > "São dois sinais que ninguém junta. A busca mostra onde está o dinheiro,
-   > mas não mostra a verdade. A devolução mostra a verdade, mas chega trinta
-   > dias depois."
-
-3. > "E nada é escrito sem aprovação humana."
+> 💡 **A frase que quase ninguém vai dizer:** *"só dois dos sete nós têm LLM"*.
+> Ela mostra que você sabe onde agente ajuda e onde é custo — e num hackathon de
+> agentes, quase todo mundo põe modelo em tudo.
 
 ### 1:10 – 1:32 · 🛑 o bloco vermelho
 
@@ -210,6 +219,38 @@ Como é gravado, quase tudo se resolve regravando. Refaça o preparo (zerar loja
 | **diagnóstico no produto errado** | regrave. Se acontecer de novo, use como está e narre: 🗣 *"Saiu no produto errado. É um modelo, e modelo erra — por isso a escrita passa por aprovação humana antes de tocar no catálogo."* |
 | **aviso âmbar na capa** | você pulou o reinício do servidor. Refaça o preparo |
 | **faixa vermelha no topo** | o backend caiu. Suba de novo e regrave |
+
+---
+
+# A ARQUITETURA, SE PRECISAR DETALHAR
+
+Cola rápida para pergunta técnica. **Nada disso entra na narração de 2 minutos**
+— o que entra é o bloco do ATO 2.
+
+```
+START → ingest ──────────── mede quantos resultados a busca dá hoje
+          ↓
+       investigador ─────── 🤖 LLM · diagnostica a causa entre seis
+          ↓
+       guarda ───────────── 🤖 LLM · lê as devoluções daquele SKU
+          ├── contradiz ──→ quarentena → FIM          nada é escrito
+          └── não ────────→ aprovacao  ⏸ interrupt()  espera o humano
+                                ├── rejeitado → FIM
+                                └── aprovado
+                                      ↓
+                                  executor ────────── escreve, idempotente
+                                      ↓
+                                  verificador ─────── refaz a busca
+```
+
+| decisão | por quê |
+|---|---|
+| **7 nós, só 2 com LLM** | modelo custa latência e imprevisibilidade. Onde a regra é determinística, código |
+| **`reasoning_effort` alto no guarda, médio no investigador** | errar no guarda custa o produto; errar no investigador custa um clique |
+| **saída tipada com Pydantic** | o schema impede, por construção, que `sem_estoque` traga correção — a regra não vive só no texto do prompt |
+| **escrita depois do `interrupt()`, em nó separado** | retomar uma pausa re-executa o nó inteiro; escrita antes dela aconteceria duas vezes |
+| **`fix_id` determinístico** (sha256 de sku\|campo\|valor) | o executor detecta que já aplicou e não repete |
+| **catálogo atrás de um protocolo** | a lógica de domínio não conhece HTTP nem Shopify. Trocar por VTEX é implementar a interface |
 
 ---
 

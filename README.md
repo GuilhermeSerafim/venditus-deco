@@ -94,7 +94,15 @@ graph TD
     verificador --> FIM2([fim])
 ```
 
-Sete nós, **dois com LLM** (`investigador` e `guarda`). Os outros cinco são determinísticos.
+Sete nós, **dois com LLM** (`investigador` e `guarda`). Os outros cinco são determinísticos — não colocamos modelo onde não é preciso.
+
+O grafo acima é o desenho. Abaixo, o **mesmo grafo renderizado pelo próprio objeto compilado** — não é ilustração, é o que roda:
+
+<p align="center">
+  <img src="docs/arquitetura/grafo.png" alt="Grafo do Venditus: START → ingest → investigador → guarda, que bifurca para aprovacao ou quarentena; de aprovacao segue para executor → verificador" width="330">
+</p>
+
+Repare na bifurcação depois do `guarda`: é o único ponto do grafo com duas saídas, e é o produto inteiro. Regenere com `python scripts/gerar_diagrama.py`.
 
 **A aresta `guarda → quarentena` é o produto.** Quando o pós-venda contradiz a correção proposta, o caminho até a escrita simplesmente **não existe** — não é uma sugestão ao modelo, é topologia do grafo.
 
