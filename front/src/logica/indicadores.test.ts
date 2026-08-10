@@ -28,12 +28,34 @@ describe("indicadores", () => {
     expect(r.resultadosAntes).toBeNull();
   });
 
-  it("soma a perda estimada apenas das execucoes que escreveram", () => {
+  it("soma a perda estimada apenas das execucoes que melhoraram a busca", () => {
     const r = indicadores([
-      estado({ perda_estimada: 3841.73, escreveu: true }),
+      estado({
+        perda_estimada: 3841.73,
+        escreveu: true,
+        resultados_antes: 0,
+        resultados_depois: 1,
+      }),
       estado({ perda_estimada: 1446.3, escreveu: false, status: "quarentena" }),
     ]);
     expect(r.receitaRecuperada).toBe(3841.73);
+  });
+
+  it("escrita que nao melhorou a busca NAO conta como receita", () => {
+    // Caso real: o investigador propos marcar uma mochila de 60L como
+    // "80 litros"; o guarda nao tinha devolucao daquele SKU para contradizer;
+    // a escrita foi aplicada e a busca continuou em zero. Contar isso como
+    // receita seria afirmar o contrario do que a propria execucao mediu.
+    const r = indicadores([
+      estado({
+        perda_estimada: 723.15,
+        escreveu: true,
+        resultados_antes: 0,
+        resultados_depois: 0,
+      }),
+    ]);
+    expect(r.receitaRecuperada).toBe(0);
+    expect(r.execucoes).toBe(1);
   });
 
   it("ARMADILHA: status 'aplicado' com escreveu=false NAO conta receita", () => {
@@ -63,7 +85,7 @@ describe("indicadores", () => {
     expect(r.bloqueados).toBe(0);
   });
 
-  it("o antes/depois vem da ultima execucao que escreveu", () => {
+  it("o antes/depois ignora execucoes que nao melhoraram a busca", () => {
     const r = indicadores([
       estado({ escreveu: true, resultados_antes: 0, resultados_depois: 1 }),
       estado({ status: "quarentena", resultados_antes: 0, resultados_depois: 0 }),
@@ -72,10 +94,31 @@ describe("indicadores", () => {
     expect(r.resultadosDepois).toBe(1);
   });
 
-  it("arredonda a receita em duas casas, como receita_recuperada", () => {
+  it("uma execucao sem ganho nao apaga da tela o ganho de outra", () => {
+    // Com "a ultima que escreveu", rodar a mochila depois do tenis trocava o
+    // 0 -> 1 da tela por 0 -> 0, e o resultado bom sumia.
     const r = indicadores([
-      estado({ perda_estimada: 3841.73, escreveu: true }),
-      estado({ perda_estimada: 723.15, escreveu: true }),
+      estado({ escreveu: true, resultados_antes: 0, resultados_depois: 1 }),
+      estado({ escreveu: true, resultados_antes: 0, resultados_depois: 0 }),
+    ]);
+    expect(r.resultadosAntes).toBe(0);
+    expect(r.resultadosDepois).toBe(1);
+  });
+
+  it("arredonda a receita em duas casas", () => {
+    const r = indicadores([
+      estado({
+        perda_estimada: 3841.73,
+        escreveu: true,
+        resultados_antes: 0,
+        resultados_depois: 1,
+      }),
+      estado({
+        perda_estimada: 723.15,
+        escreveu: true,
+        resultados_antes: 1,
+        resultados_depois: 2,
+      }),
     ]);
     expect(r.receitaRecuperada).toBe(4564.88);
   });
