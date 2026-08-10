@@ -19,11 +19,17 @@ function selo(estado: EstadoVenditus | undefined) {
     return <span className="text-perigo">recusado</span>;
   }
   if (estado.escreveu) {
-    return (
-      <span className="text-sucesso">
-        gravado · {estado.resultados_antes} → {estado.resultados_depois}
-      </span>
-    );
+    // Verde so quando a busca melhorou de fato. Escrita aplicada que nao move
+    // a busca nao e sucesso — foi o caso da mochila de 60L marcada como
+    // "80 litros": gravou e a busca continuou em zero.
+    if (estado.resultados_depois > estado.resultados_antes) {
+      return (
+        <span className="text-sucesso">
+          gravado · {estado.resultados_antes} → {estado.resultados_depois}
+        </span>
+      );
+    }
+    return <span className="text-aviso">gravado · busca não mudou</span>;
   }
   if (estado.status === "rejeitado") {
     return <span className="text-texto-fraco">rejeitado por você</span>;
