@@ -4,8 +4,20 @@ import type { EstadoVenditus } from "../dados/contrato";
 import { STATUS_TERMINAIS } from "../dados/contrato";
 import { perdaEstimada } from "../dados/espelho";
 
-/** `/api` e o proxy do Vite para 127.0.0.1:2024 — nunca a origem direta. */
-const URL_API = "/api";
+/** O proxy do Vite para 127.0.0.1:2024 — nunca a origem direta.
+ *
+ * Precisa ser ABSOLUTO. O SDK monta o alvo com `new URL(apiUrl + path)`
+ * (client/base.js:119), sem base, entao um caminho relativo como "/api"
+ * estoura com "Failed to construct 'URL': Invalid URL" no primeiro submit.
+ *
+ * Usando a origem da propria pagina, a chamada sai para
+ * http://localhost:5173/api/... e o proxy do vite.config.ts a encaminha —
+ * o navegador continua sem falar com a porta 2024, que e o que mata o CORS.
+ */
+const URL_API =
+  typeof window === "undefined"
+    ? "http://127.0.0.1:2024"
+    : `${window.location.origin}/api`;
 
 /** A chave de `graphs` em back/langgraph.json. Nao e o nome do modulo. */
 const ASSISTENTE = "venditus";
