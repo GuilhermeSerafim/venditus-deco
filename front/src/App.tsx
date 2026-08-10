@@ -30,6 +30,10 @@ function lerGuardadas(): Record<string, EstadoVenditus> {
   if (typeof window === "undefined") return {};
   if (window.location.search.includes("limpar")) {
     window.sessionStorage.removeItem(CHAVE_GUARDADAS);
+    // Tira o ?limpar da barra de endereco depois de agir. Se ele ficasse ali,
+    // um F5 acidental no meio do pitch zeraria tudo de novo — justamente o
+    // que o sessionStorage existe para impedir.
+    window.history.replaceState(null, "", window.location.pathname);
     return {};
   }
   try {

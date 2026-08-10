@@ -87,6 +87,34 @@ o que elimina CORS.
 
 Confira o backend: `curl http://127.0.0.1:2024/ok` → `{"ok":true}`
 
+### Ritual de reteste
+
+Duas coisas guardam estado entre um ensaio e outro. **Zere as duas antes de
+cada tomada**, sempre nesta ordem:
+
+**1. A loja** — só é necessário se a execução anterior *escreveu* (o caso do
+tênis aprovado). O caso da capa é bloqueado e não escreve nada.
+
+```powershell
+cd back
+.\.venv\Scripts\python.exe scripts\verificar_shopify.py --resetar
+```
+
+A saída confirma o estado de partida:
+`busca por 'tênis impermeável' agora: 0 resultado(s)`
+
+**2. A tela** — abra `http://localhost:5173/?limpar`
+
+O `?limpar` some da barra de endereço sozinho depois de agir, para um F5
+acidental não zerar tudo no meio da apresentação.
+
+**Como saber que está no estado de partida:** a lista não tem nenhum selo
+(`gravado`, `recusado`), os três indicadores mostram `—`, e nenhuma nota
+aparece ao rodar o primeiro caso.
+
+Não precisa reiniciar o `langgraph dev` nem o `npm run dev` — cada execução
+cria uma thread nova, e o Vite recarrega o código sozinho.
+
 ### Conferir o contrato sem abrir o navegador
 
 ```powershell
