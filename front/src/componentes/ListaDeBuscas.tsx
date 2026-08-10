@@ -82,11 +82,12 @@ export function ListaDeBuscas({
         );
       })}
 
-      {/* A formula fica sempre visivel: o R$ e ESTIMATIVA, e o HANDOFF exige
-          que ela apareca na tela junto do numero, rotulada como tal. */}
-      <p className="mt-3 border-t border-borda px-1.5 pt-2 text-[10.5px] leading-relaxed text-[#737373]">
-        estimativa · volume × {CONVERSAO_ASSUMIDA * 100}% de conversão ×{" "}
-        {moeda(TICKET_MEDIO_BRL)} de ticket médio (ABComm 2026)
+      {/* Sempre visivel, e de proposito: e a unica marca permanente de que o
+          R$ e ESTIMATIVA. Enquanto ela esta na tela, ninguem precisa dizer em
+          voz alta. O HANDOFF exige a formula junto do numero, rotulada. */}
+      <p className="mt-3 border-t border-borda px-1.5 pt-2 text-[10px] leading-relaxed text-[#6B6B6B]">
+        R$ estimados · volume × {CONVERSAO_ASSUMIDA * 100}% ×{" "}
+        {moeda(TICKET_MEDIO_BRL)} <span className="whitespace-nowrap">(ticket médio ABComm 2026)</span>
       </p>
     </nav>
   );

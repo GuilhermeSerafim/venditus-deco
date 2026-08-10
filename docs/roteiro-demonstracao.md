@@ -3,6 +3,10 @@
 **Você tem 2 minutos.** Seu colega tem 3 e carrega os números de mercado.
 **Você carrega a prova.**
 
+**Formato: vídeo gravado e editado.** Isso muda tudo para melhor — você grava
+uma tomada com os três casos, corta a espera na edição, e regrava se algo der
+errado. Nada acontece ao vivo.
+
 ---
 
 ## A forma da sua fala, em uma linha
@@ -15,7 +19,7 @@ mostra o caminho feliz.
 
 ---
 
-# ANTES DE COMEÇAR
+# ANTES DE GRAVAR
 
 ## 1. Zerar a loja
 
@@ -34,26 +38,46 @@ cd back
 .\.venv\Scripts\langgraph.exe dev --no-browser --port 2024
 ```
 
-> Sem isso, a segunda tomada pula a escrita e a busca não muda.
+> Sem isso, a escrita é pulada e a busca não muda.
 
 ## 3. Limpar a tela
 
 Abra: `http://localhost:5173/?limpar`
 
-## 4. Preparar os dois casos que você NÃO vai rodar ao vivo
-
-**Rode e aprove o tênis.** Depois **rode e aprove a mochila.**
-Deixe os dois com selo na lista. A capa fica intocada.
-
-## ✅ Confira antes de abrir a boca
+## ✅ Confira antes de apertar o REC
 
 | item | esperado |
 |---|---|
-| tênis | `gravado · 0 → 1` (verde) |
-| mochila | `gravado · busca não mudou` (âmbar) |
-| capa | sem selo |
-| indicadores | `R$ 3.841,73` · `0 de 2` · `0 → 1` |
+| a lista | três buscas, **nenhum selo** |
+| indicadores | `—` · `—` · `—` |
 | faixas de erro | nenhuma |
+| janela | maximizada, ≥1024px de largura |
+
+---
+
+# COMO GRAVAR
+
+**Uma tomada só, nesta ordem.** A ordem é causal, não estética: o caso da capa
+só diagnostica o produto certo depois que o tênis foi corrigido.
+
+```
+1. tênis   → aprovar   (leva ~60-90s)
+2. capa    → é recusada sozinha, você não faz nada (~40-70s)
+3. mochila → aprovar   (leva ~60-90s)
+```
+
+Grave **sem falar**. A narração entra depois, por cima.
+
+## Na edição
+
+**Acelere as esperas de LLM, mas mostre que acelerou.** Ponha um selo `×8` no
+canto durante os trechos acelerados.
+
+> ⚠️ Corte seco nesses trechos é o que faz um jurado perguntar *"isso foi
+> encenado?"*. Acelerar com marcador visível responde antes da pergunta: o
+> tempo passou, nada foi montado.
+
+Alvo: os três casos cabem em **~90 segundos** de vídeo.
 
 ---
 
@@ -68,8 +92,9 @@ Deixe os dois com selo na lista. A capa fica intocada.
 > "Essas são buscas que clientes fizeram e a loja não atendeu. **Seis mil reais
 > por mês** parados em três termos.
 >
-> A Baymard estudou 325 sites: **68% tratam busca sem resultado como beco sem
-> saída.** O cliente sai calado, e a loja nunca fica sabendo que perdeu a venda.
+> Pela Baymard, **quase metade dos sites de e-commerce não oferece nenhum
+> caminho de recuperação** quando a busca não acha nada. O cliente sai calado,
+> e a loja nunca fica sabendo que perdeu a venda.
 >
 > As buscas e as devoluções aqui são sintéticas — não plugamos analytics nem
 > pós-venda. O modelo, a loja Shopify e a escrita são reais."
@@ -176,13 +201,15 @@ Deixe os dois com selo na lista. A capa fica intocada.
 
 # SE DER ERRADO
 
+Como é gravado, quase tudo se resolve regravando. Refaça o preparo (zerar loja
+→ reiniciar servidor → `?limpar`) antes de cada tomada.
+
 | situação | o que fazer |
 |---|---|
-| **atrasando** | corte o ATO 3. Nunca corte a leitura das duas frases |
-| **muito atrasado** | corte também o "aponta o tênis" (0:18–0:24) |
-| **diagnóstico no produto errado** | 🗣 *"Saiu no produto errado. É um modelo, e modelo erra — por isso a escrita passa por aprovação humana antes de tocar no catálogo."* |
-| **aviso âmbar "a busca não mudou" na capa** | o servidor não foi reiniciado. Siga em frente, não conserte ao vivo |
-| **faixa vermelha no topo** | o backend caiu. Só nesse caso vale parar e subir de novo |
+| **narração passou de 2 min** | corte o ATO 3 inteiro. **Nunca corte a leitura das duas frases** |
+| **diagnóstico no produto errado** | regrave. Se acontecer de novo, use como está e narre: 🗣 *"Saiu no produto errado. É um modelo, e modelo erra — por isso a escrita passa por aprovação humana antes de tocar no catálogo."* |
+| **aviso âmbar na capa** | você pulou o reinício do servidor. Refaça o preparo |
+| **faixa vermelha no topo** | o backend caiu. Suba de novo e regrave |
 
 ---
 
@@ -241,6 +268,31 @@ ponto de equilíbrio     = 1.446,30 ÷ 734,45 ≈  2 devoluções/mês
 a capa já tem           = 8 em 90 dias      ≈  2,7 por mês
 ```
 
-> ⚠️ Baymard, ABComm e os 30% vêm do seu levantamento — tenha as fontes numa
-> aba aberta. Se a fonte dos 30% for frágil, diga **"cerca de duas devoluções
-> por mês"** em vez do decimal. Igualmente fatal, e mais honesto.
+> Diga **"cerca de duas devoluções por mês"**, não o decimal. Igualmente fatal
+> e mais honesto.
+
+---
+
+# FONTES — verificadas em 09/08/2026
+
+| afirmação | fonte | situação |
+|---|---|---|
+| quase metade dos sites não oferece recuperação em busca vazia | [Baymard](https://baymard.com/blog/no-results-page) | ✅ confere com a página atual |
+| ticket médio R$ 564,96 em 2026 | ABComm | ✅ confere |
+| devolução custa até 30% acima do reembolso | [E-Commerce Brasil](https://www.ecommercebrasil.com.br/noticias/devolucoes-podem-custar-30-acima-do-valor-reembolsado-aponta-estudo) · [Mercado&Consumo](https://mercadoeconsumo.com.br/03/03/2026/ecommerce/devolucoes-no-e-commerce-elevam-custo-em-ate-30-alem-do-valor-reembolsado/) | ✅ confere |
+
+> ⚠️ **Não use "68% de 325 sites".** Esse número circula em blogs de terceiros
+> citando um benchmark antigo. A página atual da Baymard diz **"nearly 50%"**.
+> Se um jurado abrir a fonte durante a apresentação, ele vê 50%.
+
+## Munição extra para o seu colega (3 min dele)
+
+Da mesma pesquisa, e nenhum estava no seu levantamento:
+
+- o custo total de uma devolução vai de **20% a 65% do valor do produto**,
+  conforme o segmento
+- a taxa de devolução no e-commerce brasileiro fica entre **20% e 40%**
+- lojas que não gerenciam logística reversa perdem **8% a 12% do faturamento
+  anual**
+
+Fonte: [Troque e Devolva — Taxa de devolução no e-commerce Brasil 2026](https://www.troqueedevolva.com.br/blog/taxa-devolucao-ecommerce-brasil-2026-dados)
