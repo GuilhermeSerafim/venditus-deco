@@ -188,7 +188,13 @@ back/                # 🐍 o agente
       shopify.py     # 🛒 Shopify Admin GraphQL
   scripts/           # 🧰 demo, seed, verificação, diagrama, avaliação
   tests/             # ✅ 78 testes, sem rede
-front/               # ⚛️ a interface (próxima rodada)
+front/               # ⚛️ a interface
+  src/
+    dados/           # 🧬 contrato do estado e o espelho declarado do back
+    logica/          # 🧮 passos, indicadores e formatação — testados
+    ganchos/         # 🪝 usarExecucao, embrulhando o useStream
+    componentes/     # 🎨 as telas, com a recusa no centro
+  scripts/           # 🔎 sonda da superfície do SDK
   HANDOFF.md         # 📋 tudo que o dev de front precisa saber
 docs/                # 📚 spec, plano e diagrama
 ```
@@ -205,7 +211,7 @@ A lógica de domínio **não conhece HTTP nem Shopify**. Trocar por VTEX é impl
 | 🤖 Modelo | **GPT-5.6 Terra** nos dois nós de LLM |
 | 🧾 Saída tipada | Pydantic via `with_structured_output()` |
 | 🛒 Catálogo | Shopify Admin GraphQL, atrás de adapter |
-| ⚛️ Front | React + `useStream` + shadcn/ui *(próxima rodada)* |
+| ⚛️ Front | **React + Vite + `useStream`** + Tailwind v4 |
 
 ---
 
@@ -217,6 +223,8 @@ A lógica de domínio **não conhece HTTP nem Shopify**. Trocar por VTEX é impl
 | 🗺️ [Plano de implementação](docs/superpowers/plans/2026-08-09-venditus-backend.md) | 15 tarefas em TDD |
 | 🤖 [AGENTS.md](AGENTS.md) | decisões inegociáveis para agentes |
 | 📋 [front/HANDOFF.md](front/HANDOFF.md) | contrato, paleta e telas para quem faz o front |
+| 🎨 [Design do front](docs/superpowers/specs/2026-08-09-venditus-front-design.md) | telas, nomenclatura e as lacunas do contrato |
+| 🗺️ [Plano do front](docs/superpowers/plans/2026-08-09-venditus-front.md) | 16 tarefas |
 
 ---
 
@@ -224,7 +232,7 @@ A lógica de domínio **não conhece HTTP nem Shopify**. Trocar por VTEX é impl
 
 **Nesta rodada:** o loop completo busca → catálogo, com o corpus de devolução alimentando o nó guarda.
 
-**Fora, e declarado:** caminho de escrita pós-venda → PDP · camada de lote e anomalia regional · adapter VTEX · agendamento · front-end.
+**Fora, e declarado:** caminho de escrita pós-venda → PDP · camada de lote e anomalia regional · adapter VTEX · agendamento · tema light do front · responsivo mobile.
 
 O motor tem **dois leitores desenhados e um construído**. O guarda prova que o segundo sinal está ligado.
 
