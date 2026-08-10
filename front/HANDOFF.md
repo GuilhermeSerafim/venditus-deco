@@ -56,7 +56,7 @@ cd back
 Confira: `curl http://127.0.0.1:2024/ok` → `{"ok":true}`
 Swagger com todas as rotas: `http://127.0.0.1:2024/docs`
 
-### ⚠️ Armadilha conhecida
+### ⚠️ Armadilha 1 — instalação editável quebrada
 
 Se `import venditus` falhar com `ModuleNotFoundError`, a instalação editável
 quebrou silenciosamente. Rode:
@@ -68,6 +68,44 @@ quebrou silenciosamente. Rode:
 Confirme que surgiu `_editable_impl_venditus.pth` em `.venv/Lib/site-packages`.
 O sintoma é traiçoeiro: `pytest` funciona (injeta o caminho por config) e todo o
 resto falha.
+
+### ⚠️ Armadilha 2 — `langgraph` global em vez do venv
+
+**Use sempre `.venv\Scripts\langgraph`, nunca `langgraph` solto.** Se houver um
+`langgraph` instalado globalmente, o PATH pode resolvê-lo primeiro, e aí o
+servidor sobe no Python global — que nunca enxerga o `.pth` do venv.
+
+O sintoma engana por completo: o servidor sobe, `GET /ok` responde `200`, o
+assistant aparece em `POST /assistants/search`, e **só quebra quando um run
+executa de verdade**, com `{"error":"ModuleNotFoundError","message":"An
+internal error occurred"}` — sem dizer qual módulo. O traceback fica só no
+terminal do servidor.
+
+Para confirmar qual Python está servindo:
+
+```powershell
+Get-CimInstance Win32_Process -Filter "Name = 'python.exe'" |
+  Select-Object ProcessId, ExecutablePath
+```
+
+O processo do servidor tem que ser `back\.venv\Scripts\python.exe`.
+
+### ⚠️ Armadilha 3 — resetar a loja não é cosmético
+
+`python scripts/verificar_shopify.py --resetar` **muda o que o LLM
+diagnostica**, não só o número da tela.
+
+Com o atributo `impermeavel` já gravado no SKU-4471, a busca acha o produto, e
+o investigador procura outra coisa faltando — numa execução real ele propôs
+gravar `campo="tenis"`, um atributo inventado que não existia. O guarda liberou
+(devoluções sobre tamanho e cor não contradizem "ser tênis"), e a escrita
+aconteceu.
+
+Ou seja: **sem reset, o caso do tênis não falha com erro — ele "funciona" e
+mostra a correção errada na tela.** Resete antes de cada tomada.
+
+O `--resetar` apaga apenas a chave `impermeavel`. Se um teste gravou outra
+chave, apague-a à mão pelo admin da Shopify.
 
 ---
 
