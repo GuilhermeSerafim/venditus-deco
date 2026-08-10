@@ -31,13 +31,23 @@ Dois produtos entram com **diagnóstico idêntico** e saem com decisões opostas
 
 ---
 
-## 2. Rodando o backend
+## 2. Rodando
 
-```bash
+São **dois processos, em dois terminais**. Os comandos abaixo são para
+**Windows PowerShell 5.1**, que é o shell da máquina do projeto.
+
+> ⚠️ Duas diferenças que derrubam quem copia comando de tutorial:
+> **`&&` não existe** no PowerShell 5.1 — o separador é `;`, ou uma linha por
+> comando. E o executável precisa de `.\` na frente, senão o PowerShell não
+> resolve o caminho relativo.
+
+### Preparo, uma vez só
+
+```powershell
 cd back
 python -m venv .venv
-.venv\Scripts\pip install -e ".[dev]"
-.venv\Scripts\python -c "import venditus"      # tem que passar sem erro
+.\.venv\Scripts\pip.exe install -e ".[dev]"
+.\.venv\Scripts\python.exe -c "import venditus"   # tem que passar sem erro
 ```
 
 Crie `back/.env` com a sua chave (o servidor não sobe sem ela):
@@ -46,15 +56,49 @@ Crie `back/.env` com a sua chave (o servidor não sobe sem ela):
 OPENAI_API_KEY=sk-...
 ```
 
-Suba o servidor:
+### Terminal 1 — backend
 
-```bash
+```powershell
 cd back
-.venv\Scripts\langgraph dev --no-browser --port 2024
+.\.venv\Scripts\langgraph.exe dev --no-browser --port 2024
 ```
 
-Confira: `curl http://127.0.0.1:2024/ok` → `{"ok":true}`
-Swagger com todas as rotas: `http://127.0.0.1:2024/docs`
+Deixe rodando e **de olho**: é neste terminal que aparece o traceback quando
+um run falha. A API devolve só `"An internal error occurred"`, sem o detalhe.
+
+### Terminal 2 — front
+
+```powershell
+cd front
+npm install     # uma vez só
+npm run dev
+```
+
+### Onde você olha
+
+| processo | porta | abre no navegador? |
+|---|---|---|
+| front (Vite) | **5173** | **sim — `http://localhost:5173`** |
+| backend (`langgraph dev`) | 2024 | não; só `/docs`, se quiser o Swagger |
+
+O front fala com o backend pelo proxy `/api`, configurado em
+`front/vite.config.ts`. O navegador nunca chama a porta 2024 diretamente — é
+o que elimina CORS.
+
+Confira o backend: `curl http://127.0.0.1:2024/ok` → `{"ok":true}`
+
+### Conferir o contrato sem abrir o navegador
+
+```powershell
+cd front
+node scripts/sonda-sdk.mjs
+```
+
+Roda os dois casos do pitch pelo SDK e confere o protocolo item a item. É o
+caminho mais rápido para saber se o problema está no backend ou na interface.
+
+> ⚠️ A sonda **aprova o caso do tênis**, ou seja, escreve na loja de verdade.
+> Rode o reset depois (veja a Armadilha 3).
 
 ### ⚠️ Armadilha 1 — instalação editável quebrada
 
