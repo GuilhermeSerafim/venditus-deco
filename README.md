@@ -4,13 +4,15 @@
 
 *Venditus* — do latim, "vendido". O que o catálogo deixa de dizer, o cliente já disse.
 
-Hackathon **deco — Agents for Commerce** · 2026
+Demo desenvolvida no contexto do hackathon **deco — Agents for Commerce** · 2026.
+
+**Demo com dados sintéticos:** volumes, produtos e devoluções apresentados abaixo vêm de `back/src/venditus/seed.py`. Não são clientes, vendas ou devoluções observados em produção. As decisões e indicadores das tabelas descrevem o cenário esperado da demonstração.
 
 ---
 
 ## 🎯 O problema
 
-**O catálogo não fala a língua do cliente.** Isso gera dois sintomas que ninguém conecta:
+**Quando o catálogo não fala a língua do cliente**, podem surgir problemas antes e depois da compra. O cenário de exemplo conecta esses dois sinais:
 
 **🔍 Antes da compra** — o cliente busca *"tênis impermeável"*. A loja **tem** o produto, mas a palavra só existe no texto livre da descrição, não como atributo estruturado. A busca retorna zero. Ele sai calado, e a loja nunca fica sabendo que perdeu a venda.
 
@@ -24,31 +26,30 @@ Hackathon **deco — Agents for Commerce** · 2026
 
 Existem dois sinais na loja, e cada um enxerga metade do problema.
 
-#### 🔍 A busca mostra **onde** está o dinheiro — mas não mostra a verdade
+#### 🔍 A busca indica uma oportunidade — mas não confirma o atributo
 
-340 pessoas procuraram *"tênis impermeável"* e não acharam nada. Você sabe que tem venda parada ali, e sabe quanto vale.
+O cenário usa **340 buscas sintéticas** por *"tênis impermeável"* sem resultados. Esse volume alimenta uma estimativa de oportunidade; não mede vendas perdidas.
 
 O que a busca **não** sabe: se o tênis é mesmo impermeável. Isso ela só pode inferir da descrição — um texto escrito pelo marketing.
 
-#### 📦 A devolução mostra a **verdade** — mas não mostra o tamanho
+#### 📦 A devolução acrescenta o relato de uso — mas não mede a oportunidade
 
-Oito pessoas que compraram a capa de chuva escreveram que ela molha. Isso é fato, dito por quem usou o produto.
+Oito pessoas que compraram a capa de chuva escreveram que ela molha. No cenário sintético, esse é o sinal atribuído ao pós-venda; não é um depoimento real coletado.
 
-O que a devolução **não** sabe: quantas vendas estão sendo perdidas por causa disso, nem onde procurar a próxima. São oito pessoas, e a informação chega 30 dias depois da compra.
+O que a devolução **não** sabe: quantas vendas estão sendo perdidas por causa disso, nem onde procurar a próxima. Os oito relatos sintéticos fazem parte do histórico de devoluções, não de um acompanhamento real de clientes.
 
-#### 🧩 Sozinho, cada sinal leva a uma decisão errada
+#### 🧩 Por que combinar os sinais neste exemplo
 
-A busca sozinha manda marcar **os dois** produtos como impermeáveis — e um deles não é.
-A devolução sozinha nunca conta que existe uma venda perdida esperando ser recuperada.
+No exemplo, considerar apenas o catálogo pode levar à mesma proposta para **os dois** produtos. O histórico sintético de devoluções acrescenta a contradição que falta para a capa de chuva.
 
-Juntos, eles permitem uma coisa que nenhum dos dois faz separado: **distinguir uma correção de uma mentira.**
+O fluxo combina esses sinais para **propor uma correção ou recusá-la quando encontra uma contradição**.
 
-### O exemplo que define o produto
+### Cenário sintético de demonstração
 
-Dois produtos na prateleira. A diferença entre eles é invisível no catálogo:
+Dois produtos fictícios ilustram o problema de atributo:
 
-- **`SKU-4471` — Tênis Trilha Alpha** · tem membrana impermeável de verdade · descrição menciona · atributo **vazio**
-- **`SKU-8802` — Capa de Chuva Nimbus** · só repele garoa, encharca em chuva forte · descrição menciona · atributo **vazio**
+- **`SKU-4471` — Tênis Trilha Alpha** · descrição afirma ter membrana impermeável · atributo **vazio**
+- **`SKU-8802` — Capa de Chuva Nimbus** · descrição menciona repelência à água · devoluções sintéticas relatam entrada de água · atributo **vazio**
 
 Sinal de entrada:
 
@@ -65,14 +66,12 @@ O que os separa está no pós-venda:
 |---|---|---|
 | Devoluções em 90 dias | 3 | 11 |
 | Falando de água | **0** | **8** |
-| Decisão do agente | ✅ **escreve** | 🛑 **recusa** |
-| Resultado | busca passa de 0 → 1 produto | vai para qualidade, **nada é escrito** |
+| Decisão esperada do agente | ✅ **escreve** | 🛑 **recusa** |
+| Resultado esperado | busca passa de 0 → 1 produto | vai para qualidade, **nada é escrito** |
 
-### 🛑 O que uma ferramenta de busca faria
+### 🛑 Uma busca que considera apenas o catálogo
 
-**Exatamente a mesma coisa nos dois.** Ela vê dois termos com zero resultado e dois produtos cujo texto menciona impermeabilidade. Aplica nos dois — porque **a informação que a impediria de aplicar no segundo não existe no mundo dela.**
-
-Trinta dias depois: o zero-results caiu, o dashboard dela está verde, a capa começou a vender para quem queria impermeável de verdade, e as devoluções subiram — no P&L da **logística**, não no da busca. Ninguém liga uma coisa à outra.
+No cenário de exemplo, uma busca que considera apenas o catálogo encontra dois termos sem resultado e textos sobre impermeabilidade ou repelência à água. Sem consultar o pós-venda, ela não dispõe da contradição usada pelo guarda para recusar a segunda correção. Esse contraste descreve o cenário, sem caracterizar todas as ferramentas de busca do mercado.
 
 > **Os dois casos entram idênticos no sistema. Só um deveria sair escrito.
 > A diferença só existe se você ler os dois lados.**
@@ -89,20 +88,21 @@ graph TD
     guarda -->|contradição| quarentena[🛑 quarentena]
     guarda -->|ok| aprovacao{{"✋ aprovação humana"}}
     quarentena --> FIM1([fim])
-    aprovacao --> executor[✍️ executor<br/>escreve no catálogo]
+    aprovacao -->|aprovado| executor[✍️ executor<br/>escreve no catálogo]
+    aprovacao -->|rejeitado| FIM3([fim])
     executor --> verificador[📊 verificador<br/>mede antes/depois]
     verificador --> FIM2([fim])
 ```
 
 Sete nós, **dois com LLM** (`investigador` e `guarda`). Os outros cinco são determinísticos — não colocamos modelo onde não é preciso.
 
-O grafo acima é o desenho. Abaixo, o **mesmo grafo renderizado pelo próprio objeto compilado** — não é ilustração, é o que roda:
+O Mermaid representa os caminhos de `back/src/venditus/graph.py`, incluindo o encerramento após rejeição humana. A imagem abaixo é uma ilustração de arquitetura; para consultar as rotas de decisão, use o Mermaid e o código.
 
 <p align="center">
-  <img src="docs/arquitetura/grafo.png" alt="Grafo do Venditus: START → ingest → investigador → guarda, que bifurca para aprovacao ou quarentena; de aprovacao segue para executor → verificador" width="330">
+  <img src="docs/arquitetura/grafo.png" alt="Imagem de arquitetura existente no repositório Venditus-deco" width="330">
 </p>
 
-Repare na bifurcação depois do `guarda`: é o único ponto do grafo com duas saídas, e é o produto inteiro. Regenere com `python scripts/gerar_diagrama.py`.
+Há roteamento condicional no `guarda` e na aprovação humana: uma aprovação segue ao `executor`; uma rejeição encerra o fluxo sem passar por esse nó. Para regenerar a imagem, execute `python scripts/gerar_diagrama.py` a partir de `back/`, com o ambiente Python do backend preparado.
 
 **A aresta `guarda → quarentena` é o produto.** Quando o pós-venda contradiz a correção proposta, o caminho até a escrita simplesmente **não existe** — não é uma sugestão ao modelo, é topologia do grafo.
 
@@ -110,44 +110,35 @@ E nada é escrito sem **aprovação humana**. A escrita mora num nó posterior a
 
 ---
 
-## 📊 O que ele mede
+## 📊 Indicadores do cenário de demonstração
 
-| KPI | Demonstrável ao vivo |
+| Indicador | Uso no cenário sintético |
 |---|---|
-| 🔍 Taxa de busca sem resultado | ✅ `0 → 1` na hora |
-| 🏷️ Cobertura de atributo | ✅ na hora |
-| 💰 Receita recuperada (estimada) | ✅ `volume × conversão × ticket médio` |
-| 🛡️ **Taxa de bloqueio do guarda** | ✅ **a métrica do diferencial** |
-| 📉 Taxa de devolução por SKU | ⏳ 30 dias — afirmado, não demonstrado |
+| 🔍 Resultados da busca | `0 → 1` produto é o resultado esperado após a correção aprovada |
+| 🏷️ Cobertura de atributo | Compara o catálogo antes e depois da correção |
+| 💰 Oportunidade financeira estimada | `volume × conversão × ticket médio`, com premissas sintéticas; não é receita medida |
+| 🛡️ Taxa de bloqueio do guarda | Proporção de correções recusadas entre os casos processados |
+| 📉 Taxa de devolução por SKU | Avaliação futura depende de integração e acompanhamento de dados reais de pós-venda |
 
-A **taxa de bloqueio** é a única métrica que nenhum concorrente consegue calcular: ela só existe porque os dois sinais estão no mesmo motor.
+A **taxa de bloqueio** resume recusas nos casos processados pela demo. Os volumes, produtos e devoluções são sintéticos e não permitem estimar eficácia em produção.
 
-### 📈 Os números do problema
+### Contexto de negócio
 
-| | |
-|---|---|
-| Buscas sem resultado | **6,3%** mesmo com search avançado |
-| Quem usa busca | 1/3 dos visitantes, **40–60% da receita** |
-| Abandono após busca falha | **1/3 sai na hora** |
-| Sites que tratam zero-results como beco sem saída | **68%** (Baymard, 325 sites) |
-| Custo real de devolução no Brasil | até **30% acima** do valor reembolsado |
-| Ticket médio brasileiro | **R$ 564,96** (ABComm 2026) |
+O cenário explora buscas sem resultado e devoluções como sinais para revisão de catálogo. As estimativas financeiras dependem das premissas do exemplo; não representam impacto comercial medido.
 
 ---
 
 ## 🚀 Rodando
 
-**Requisitos:** Python **3.12** · Node **22+**
+**Ambiente de referência:** Python **3.12** · Node **22+**. O manifesto backend declara Python >=3.11.
 
-> ⚠️ Use `python`, não `py` — o launcher aponta para 3.14, que ainda não tem
-> wheel para várias dependências e te joga numa compilação de C sem motivo.
+Confira a versão do interpretador selecionado na sua máquina antes de criar o ambiente virtual.
 
-Há três níveis, do mais barato ao mais completo. **O nível 2 já roda a demo
-inteira** — Shopify é opcional.
+Há **quatro níveis, de 0 a 3**: testes, terminal, interface e integração opcional com Shopify. O nível 2 usa o catálogo em memória quando não há credenciais Shopify.
 
 ---
 
-### Nível 0 — os testes · nenhuma chave, nenhuma internet
+### Nível 0 — suíte de testes
 
 ```powershell
 cd back
@@ -169,33 +160,33 @@ python3 -m venv .venv
 ```
 </details>
 
-**78 testes, sem rede e sem chave de API.** O catálogo e o LLM têm dublês.
+A suíte de backend fica em `back/tests/`, com dublês em `back/tests/fakes.py` e testes de grafo, modelos e adapters.
 
-Os dois que provam a tese, se quiser ir direto ao ponto:
+Para selecionar os cenários de bloqueio e idempotência:
 
 ```powershell
 .\.venv\Scripts\pytest.exe -v -k "caminho_bloqueado or idempotente"
 ```
 
-| teste | o que prova |
+| Teste | Comportamento esperado |
 |---|---|
 | `test_caminho_bloqueado_nao_escreve` | o guarda impede a escrita quando o pós-venda contradiz |
 | `test_executor_e_idempotente` | retomar a aprovação não duplica a escrita |
 
 > ⚠️ Se `import venditus` falhar com `ModuleNotFoundError`, a instalação
-> editável quebrou em silêncio. Rode
+> editável pode não estar disponível no interpretador selecionado. Tente
 > `.\.venv\Scripts\pip.exe install -e . --force-reinstall --no-deps` e confirme
 > que surgiu `_editable_impl_venditus.pth` em `.venv/Lib/site-packages`.
-> O sintoma engana: o `pytest` continua passando e todo o resto falha.
+> A configuração de `pythonpath` do pytest pode mascarar um problema na instalação editável; confira também o import fora da suíte.
 
 ---
 
 ### Nível 1 — a demo pelo terminal · só a chave da OpenAI
 
-Crie `back/.env`:
+A partir da raiz do repositório, crie `back/.env`:
 
 ```env
-OPENAI_API_KEY=sk-...
+OPENAI_API_KEY=<sua-chave>
 ```
 
 **Sem credenciais da Shopify o projeto usa o catálogo em memória
@@ -207,20 +198,20 @@ cd back
 .\.venv\Scripts\python.exe scripts\rodar_demo.py
 ```
 
-Roda os dois casos ponta a ponta e imprime o veredito. Custa centavos.
+O script executa os dois casos e imprime o veredito, usando chamadas reais ao modelo. O custo depende do modelo, consumo e preços vigentes.
 
 ---
 
 ### Nível 2 — a interface · a demo completa
 
-**Terminal 1 — backend:**
+**Terminal 1 — a partir da raiz, backend:**
 
 ```powershell
 cd back
 .\.venv\Scripts\langgraph.exe dev --no-browser --port 2024
 ```
 
-**Terminal 2 — front:**
+**Terminal 2 — a partir da raiz, front:**
 
 ```powershell
 cd front
@@ -253,14 +244,15 @@ cd back
 | 2 | **capa de chuva impermeável** | o passo *"Audita as devoluções"* fica **vermelho** e os seguintes são riscados; aparecem **as 11 devoluções** que o guarda leu |
 | 3 | olhe os indicadores no topo | **1 de 2 correções recusadas** |
 
-Cada caso leva de 40 a 90 segundos — são dois nós de LLM com raciocínio, e o
-contador de segundos na tela mostra o tempo correndo.
+A duração e as respostas de cada caso dependem do ambiente e das chamadas ao modelo.
 
 #### Testes do front
 
+Em outro terminal, a partir da raiz do repositório:
+
 ```powershell
 cd front
-npm test        # 30 testes, funções puras
+npm test        # executa a suíte Vitest
 ```
 
 ---
@@ -271,17 +263,19 @@ Acrescente ao `back/.env`:
 
 ```env
 SHOPIFY_STORE_DOMAIN=sua-loja.myshopify.com
-SHOPIFY_ADMIN_TOKEN=shpat_...
+SHOPIFY_ADMIN_TOKEN=<seu-token>
 SHOPIFY_API_VERSION=2026-07
 ```
 
+Execute os comandos abaixo a partir de `back/`, usando o ambiente Python do backend. Eles acessam e alteram a loja configurada: o seed cria produtos e a verificação exercita o ciclo de correção. Use uma loja de desenvolvimento para a demonstração.
+
 ```powershell
 .\.venv\Scripts\python.exe scripts\semear_shopify.py      # cria os produtos
-.\.venv\Scripts\python.exe scripts\verificar_shopify.py   # prova o ciclo
+.\.venv\Scripts\python.exe scripts\verificar_shopify.py   # verifica o ciclo de correção
 ```
 
 Entre uma execução e outra, devolva o SKU-4471 ao estado "antes" **e reinicie o
-servidor** — o adapter guarda em memória as correções já aplicadas:
+servidor** — o adapter guarda em memória as correções já aplicadas. O comando seguinte também parte de `back/`:
 
 ```powershell
 .\.venv\Scripts\python.exe scripts\verificar_shopify.py --resetar
@@ -291,21 +285,21 @@ servidor** — o adapter guarda em memória as correções já aplicadas:
 
 ### Outros comandos
 
-| | |
-|---|---|
-| `python scripts/avaliar_classificador.py` | mede a acurácia do classificador (20/20 hoje) |
-| `python scripts/gerar_diagrama.py` | regenera o diagrama da arquitetura |
-| `node front/scripts/sonda-sdk.mjs` | confere o contrato do SDK contra o backend, sem navegador |
+| Pasta de execução | Comando | Finalidade |
+|---|---|---|
+| `back/`, com o ambiente Python do backend preparado | `python scripts/avaliar_classificador.py` | avalia o classificador com chamadas ao modelo |
+| `back/`, com o ambiente Python do backend preparado | `python scripts/gerar_diagrama.py` | regenera o diagrama da arquitetura |
+| raiz do repositório | `node front/scripts/sonda-sdk.mjs` | confere o contrato do SDK contra o backend, sem navegador |
 
 ---
 
 ## ⚖️ O que é real e o que é sintético
 
-Distinção que sustentamos em todo lugar:
+O projeto combina código de integração com entradas de demonstração:
 
-| real | sintético |
+| Implementação | Dados sintéticos |
 |---|---|
-| o grafo, os dois nós de LLM e o raciocínio | o corpus de buscas sem resultado (`seed.py`) |
+| o grafo e os dois nós com chamadas de LLM | o corpus de buscas sem resultado (`seed.py`) |
 | a escrita no catálogo, idempotente | o corpus de devoluções (`seed.py`) |
 | a medição antes/depois da busca | a estimativa em R$ (premissas declaradas) |
 | a decisão de recusa | — |
@@ -317,10 +311,12 @@ escrever.
 ### Limitação conhecida
 
 O guarda só protege produto que **já teve devolução**. Para um item sem
-histórico, o segundo sinal não existe e o veto não tem com o que trabalhar —
-o terceiro termo da fila (`mochila cargueira 80 litros`) demonstra isso: a loja
-não vende 80 litros, a causa correta seria sortimento, e o investigador
-diagnostica errado sem que nada possa barrá-lo.
+histórico, o segundo sinal não existe e o veto não tem com o que trabalhar.
+O terceiro termo da fila (`mochila cargueira 80 litros`) ilustra esse limite:
+o catálogo sintético só contém uma mochila de 60 litros. Se o investigador
+propuser preencher o atributo em vez de identificar a ausência do produto,
+o guarda não terá devoluções desse caso para fundamentar uma recusa. A
+aprovação humana continua necessária.
 
 ---
 
@@ -343,11 +339,11 @@ back/                # 🐍 o agente
       fake.py        # 🧪 catálogo em memória
       shopify.py     # 🛒 Shopify Admin GraphQL
   scripts/           # 🧰 demo, seed, verificação, diagrama, avaliação
-  tests/             # ✅ 78 testes, sem rede
+  tests/             # suíte de testes de backend
 front/               # ⚛️ a interface
   src/
     dados/           # 🧬 contrato do estado e o espelho declarado do back
-    logica/          # 🧮 passos, indicadores e formatação — testados
+    logica/          # 🧮 passos, indicadores e formatação, com testes
     ganchos/         # 🪝 usarExecucao, embrulhando o useStream
     componentes/     # 🎨 as telas, com a recusa no centro
   scripts/           # 🔎 sonda da superfície do SDK
@@ -364,7 +360,7 @@ A lógica de domínio **não conhece HTTP nem Shopify**. Trocar por VTEX é impl
 | | |
 |---|---|
 | 🕸️ Orquestração | **LangGraph** (Python) + checkpointer SQLite |
-| 🤖 Modelo | **GPT-5.6 Terra** nos dois nós de LLM |
+| 🤖 Modelo | Modelo configurado pelo projeto; identificador e disponibilidade exigem confirmação antes de executar |
 | 🧾 Saída tipada | Pydantic via `with_structured_output()` |
 | 🛒 Catálogo | Shopify Admin GraphQL, atrás de adapter |
 | ⚛️ Front | **React + Vite + `useStream`** + Tailwind v4 |
@@ -386,11 +382,11 @@ A lógica de domínio **não conhece HTTP nem Shopify**. Trocar por VTEX é impl
 
 ## 🚧 Escopo
 
-**Nesta rodada:** o loop completo busca → catálogo, com o corpus de devolução alimentando o nó guarda.
+**Implementado:** o loop completo busca → catálogo, com o corpus de devolução alimentando o nó guarda.
 
 **Fora, e declarado:** caminho de escrita pós-venda → PDP · camada de lote e anomalia regional · adapter VTEX · agendamento · tema light do front · responsivo mobile.
 
-O motor tem **dois leitores desenhados e um construído**. O guarda prova que o segundo sinal está ligado.
+O motor tem **dois leitores desenhados e um construído**: o fluxo busca → catálogo está implementado; o fluxo pós-venda → PDP faz parte do escopo planejado. O guarda usa o corpus sintético de devoluções dentro do primeiro fluxo.
 
 ---
 
